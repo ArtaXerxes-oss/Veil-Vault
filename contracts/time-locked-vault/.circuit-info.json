@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-09-16T05:51:47.745Z",
+  "files": {
+    "time_locked_vault.compact": [
+      {
+        "name": "createVault",
+        "k": 14,
+        "rows": 8470
+      },
+      {
+        "name": "getTreasury",
+        "k": 6,
+        "rows": 48
+      },
+      {
+        "name": "getTreasuryBalance",
+        "k": 6,
+        "rows": 26
+      },
+      {
+        "name": "getVaultState",
+        "k": 7,
+        "rows": 112
+      },
+      {
+        "name": "initialize",
+        "k": 9,
+        "rows": 319
+      },
+      {
+        "name": "isVaultInitialized",
+        "k": 6,
+        "rows": 26
+      },
+      {
+        "name": "withdraw",
+        "k": 14,
+        "rows": 11918
+      },
+      {
+        "name": "withdrawWithPenalty",
+        "k": 14,
+        "rows": 12430
+      }
+    ]
+  }
+}

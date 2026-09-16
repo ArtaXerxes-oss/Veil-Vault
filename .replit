@@ -1,0 +1,11 @@
+modules = ["nodejs-22"]
+
+[replit]
+language = "typescript"
+framework = "vite"
+
+[nix]
+packages = ["nodejs_22", "nodePackages.npm", "nodePackages.tsx"]
+
+[packager]
+npm = { install = "npm install" }

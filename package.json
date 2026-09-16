@@ -1,0 +1,69 @@
+{
+  "name": "veil-vault",
+  "private": true,
+  "version": "0.1.0",
+  "description": "VEIL Vault — a private time-locked asset vault Wave 1 implementation.",
+  "type": "module",
+  "scripts": {
+    "sync:zk": "mkdir -p public/contract/time-locked-vault && rm -rf public/contract/time-locked-vault/keys public/contract/time-locked-vault/zkir && cp -r contracts/managed/time-locked-vault/time_locked_vault/keys public/contract/time-locked-vault/ && cp -r contracts/managed/time-locked-vault/time_locked_vault/zkir public/contract/time-locked-vault/",
+    "dev": "npm run sync:zk && vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test": "rm -rf .test-build && npx esbuild src/lib/contract.ts --bundle --format=esm --platform=node --outfile=.test-build/contract.mjs && node --test tests/**/*.test.ts",
+    "test:watch": "node --test --watch tests/**/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "compile": "compact compile contracts/time-locked-vault/time_locked_vault.compact contracts/managed/time-locked-vault",
+    "build:contract": "npm run compile && npm run sync:zk && tsc --project contracts/tsconfig.json --noEmit",
+    "deploy": "tsx scripts/deploy.ts",
+    "setup": "tsx scripts/setup.ts",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "@midnight-ntwrk/compact-js": "2.5.1",
+    "@midnight-ntwrk/compact-runtime": "^0.16.0",
+    "@midnight-ntwrk/dapp-connector-api": "^4.0.1",
+    "@midnight-ntwrk/ledger": "^4.0.0",
+    "@midnight-ntwrk/ledger-v8": "^8.1.2",
+    "@midnight-ntwrk/midnight-js-contracts": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-fetch-zk-config-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "^4.1.1",
+    "@midnight-ntwrk/testkit-js": "4.1.1",
+    "@midnight-ntwrk/wallet-sdk-address-format": "3.0.0",
+    "@midnight-ntwrk/wallet-sdk-dust-wallet": "1.0.0",
+    "@midnight-ntwrk/wallet-sdk-facade": "1.0.0",
+    "@midnight-ntwrk/wallet-sdk-hd": "3.0.0",
+    "@midnight-ntwrk/wallet-sdk-shielded": "1.0.0",
+    "@midnight-ntwrk/wallet-sdk-unshielded-wallet": "1.0.0",
+    "buffer": "^6.0.3",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "rxjs": "^7.8.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/ws": "^8.18.1",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitest/coverage-v8": "^4.0.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.0.0",
+    "tsx": "^4.23.1",
+    "typescript": "5.7.2",
+    "vite": "5.4.11",
+    "vite-plugin-wasm": "^3.6.0",
+    "vitest": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "overrides": {
+    "@midnight-ntwrk/midnight-js-protocol": {
+      "@midnight-ntwrk/ledger-v8": "8.1.2"
+    }
+  }
+}

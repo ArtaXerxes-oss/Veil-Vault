@@ -1,0 +1,245 @@
+pragma language_version >= 0.20;
+
+import CompactStandardLibrary;
+
+// VEIL Vault — Private Time-Locked Vault
+// State machine: EMPTY → LOCKED → READY → WITHDRAWN | PENALTY_EXECUTED
+
+enum VaultState {
+  EMPTY,
+  LOCKED,
+  READY,
+  WITHDRAWN,
+  PENALTY_EXECUTED
+}
+
+// Public ledger state
+export ledger initialized: Boolean;
+export ledger vaultCounter: Counter;
+export ledger treasuryBalance: Uint<128>;
+export ledger treasury: Bytes<32>;
+export ledger ownerPublicKey: Bytes<32>;
+
+// Per-vault public ledger (keyed by vault id)
+export ledger vaultOwner: Map<Uint<64>, Bytes<32>>;
+export ledger vaultAmount: Map<Uint<64>, Uint<128>>;
+export ledger vaultUnlockTime: Map<Uint<64>, Uint<64>>;
+export ledger vaultLockType: Map<Uint<64>, Uint<8>>;
+export ledger vaultPenaltyBps: Map<Uint<64>, Uint<16>>;
+export ledger vaultState: Map<Uint<64>, VaultState>;
+export ledger vaultTermsCommitment: Map<Uint<64>, Bytes<32>>;
+
+// -------------------------------------
+// Witnesses (private inputs)
+// -------------------------------------
+
+witness ownerSecret(): Bytes<32>;
+witness vaultAmountPrivate(): Uint<128>;
+witness ownerProof(): Bytes<32>;
+witness vaultNonce(): Bytes<32>;
+witness vaultPenalty(): Uint<128>;
+witness currentTime(): Uint<64>;
+
+// -------------------------------------
+// Helper circuits
+// -------------------------------------
+
+circuit deriveKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>(
+    [pad(32, "veil:vault:key"), sk]
+  );
+}
+
+pure circuit hashCommit(value: Bytes<32>, nonce: Bytes<32>): Bytes<32> {
+  return persistentCommit<Vector<2, Bytes<32>>>([value, nonce], nonce);
+}
+
+pure circuit getReleaseHash(secret: Bytes<32>): Bytes<32> {
+  return persistentHash<Bytes<32>>(secret);
+}
+
+// -------------------------------------
+// Constructor
+// -------------------------------------
+
+constructor() {
+  initialized = false;
+  treasuryBalance = 0;
+  const pk = deriveKey(ownerSecret());
+  ownerPublicKey = disclose(pk);
+}
+
+// -------------------------------------
+// Initialize the vault contract
+// -------------------------------------
+
+export circuit initialize(treasuryAddr: Bytes<32>): [] {
+  assert(!initialized, "Vault already initialized");
+  assert(treasuryAddr != pad(32, ""), "Invalid treasury address");
+  initialized = true;
+  treasury = disclose(treasuryAddr);
+}
+
+// -------------------------------------
+// Create a vault (lock funds)
+// -------------------------------------
+
+export circuit createVault(
+  vaultId: Uint<64>,
+  amount: Uint<128>,
+  unlockTime: Uint<64>,
+  lockType: Uint<8>,
+  penaltyBps: Uint<16>
+): [] {
+  assert(initialized, "Vault not initialized");
+  assert(amount > 0, "Amount must be greater than zero");
+  assert(unlockTime > currentTime(), "Unlock time must be in the future");
+  assert(lockType == 0 || lockType == 1, "Invalid lock type");
+  assert(penaltyBps <= 10000, "Penalty exceeds maximum");
+
+  const secret = ownerSecret();
+  const amt = vaultAmountPrivate();
+  const nonce = vaultNonce();
+
+  // Verify the amount matches the private input
+  assert(amt == amount, "Amount mismatch");
+
+  // Create terms commitment (commits to amount, unlockTime, lockType, penaltyBps)
+  const terms = persistentCommit<Vector<4, Bytes<32>>>(
+    [
+      amt as Bytes<32>,
+      unlockTime as Bytes<32>,
+      lockType as Bytes<32>,
+      penaltyBps as Bytes<32>
+    ],
+    nonce
+  );
+
+  vaultCounter.increment(1);
+  vaultOwner.insert(disclose(vaultId), disclose(ownerPublicKey));
+  vaultAmount.insert(disclose(vaultId), disclose(amt));
+  vaultUnlockTime.insert(disclose(vaultId), disclose(unlockTime));
+  vaultLockType.insert(disclose(vaultId), disclose(lockType));
+  vaultPenaltyBps.insert(disclose(vaultId), disclose(lockType == 0 ? 0 : penaltyBps));
+  vaultState.insert(disclose(vaultId), VaultState.LOCKED);
+  vaultTermsCommitment.insert(disclose(vaultId), disclose(terms));
+}
+
+// -------------------------------------
+// Withdraw a vault after unlock (strict or penalty)
+// -------------------------------------
+
+export circuit withdraw(vaultId: Uint<64>): [] {
+  assert(initialized, "Vault not initialized");
+
+  const state = vaultState.lookup(disclose(vaultId));
+  assert(state == VaultState.LOCKED || state == VaultState.READY, "Vault not available for withdrawal");
+
+  const unlockTime = vaultUnlockTime.lookup(disclose(vaultId));
+  assert(currentTime() >= unlockTime, "Vault is still locked");
+
+  const lockType = vaultLockType.lookup(disclose(vaultId));
+  const amount = vaultAmount.lookup(disclose(vaultId));
+  const ownerCommitment = vaultOwner.lookup(disclose(vaultId));
+
+  // Verify caller is the owner
+  const pk = deriveKey(ownerSecret());
+  assert(pk == ownerCommitment, "Only the owner can withdraw");
+
+  // Verify terms commitment matches
+  const n = vaultNonce();
+  const recomputed = persistentCommit<Vector<4, Bytes<32>>>(
+    [
+      amount as Bytes<32>,
+      unlockTime as Bytes<32>,
+      lockType as Bytes<32>,
+      vaultPenaltyBps.lookup(disclose(vaultId)) as Bytes<32>
+    ],
+    n
+  );
+  assert(recomputed == vaultTermsCommitment.lookup(disclose(vaultId)), "Invalid terms");
+
+  // Transfer to owner
+  vaultState.insert(disclose(vaultId), VaultState.WITHDRAWN);
+}
+
+// -------------------------------------
+// Withdraw with penalty (early exit from penalty vault)
+// -------------------------------------
+
+export circuit withdrawWithPenalty(
+  vaultId: Uint<64>,
+  penaltyBps: Uint<16>
+): Uint<128> {
+  assert(initialized, "Vault not initialized");
+
+  const state = vaultState.lookup(disclose(vaultId));
+  assert(state == VaultState.LOCKED || state == VaultState.READY, "Vault not available");
+
+  const lockType = vaultLockType.lookup(disclose(vaultId));
+  assert(lockType == 1, "Only penalty vaults support early withdrawal");
+
+  const amount = vaultAmount.lookup(disclose(vaultId));
+  const unlockTime = vaultUnlockTime.lookup(disclose(vaultId));
+
+  // Owner must prove ownership
+  const pk = deriveKey(ownerSecret());
+  assert(pk == vaultOwner.lookup(disclose(vaultId)), "Only the owner can withdraw");
+
+  // Verify terms commitment matches
+  const n = vaultNonce();
+  const recomputed = persistentCommit<Vector<4, Bytes<32>>>(
+    [
+      amount as Bytes<32>,
+      unlockTime as Bytes<32>,
+      lockType as Bytes<32>,
+      vaultPenaltyBps.lookup(disclose(vaultId)) as Bytes<32>
+    ],
+    n
+  );
+  assert(recomputed == vaultTermsCommitment.lookup(disclose(vaultId)), "Invalid terms");
+
+  // Calculate penalty
+  const penalty: Uint<128> = vaultPenalty();
+  
+  // Verify penalty is correct: penalty * 10000 == amount * penaltyBps (for early withdrawal)
+  // For already unlocked vaults, penalty should be 0
+  if (currentTime() >= unlockTime) {
+    assert(penalty == 0, "Penalty must be 0 after unlock");
+  } else {
+    assert(penalty * 10000 == amount * disclose(penaltyBps), "Invalid penalty calculation");
+  }
+
+  const ownerPayout: Uint<128> = amount - penalty;
+  const penaltyDisclosed = disclose(penalty);
+  treasuryBalance = treasuryBalance + penaltyDisclosed as Uint<128>;
+
+  const now = disclose(currentTime());
+  if (now >= unlockTime) {
+    vaultState.insert(disclose(vaultId), VaultState.WITHDRAWN);
+  } else {
+    vaultState.insert(disclose(vaultId), VaultState.PENALTY_EXECUTED);
+  }
+
+  return disclose(ownerPayout);
+}
+
+// -------------------------------------
+// View circuits
+// -------------------------------------
+
+export circuit getVaultState(vaultId: Uint<64>): VaultState {
+  return vaultState.lookup(disclose(vaultId));
+}
+
+export circuit isVaultInitialized(): Boolean {
+  return initialized;
+}
+
+export circuit getTreasury(): Bytes<32> {
+  return treasury;
+}
+
+export circuit getTreasuryBalance(): Uint<128> {
+  return treasuryBalance;
+}
