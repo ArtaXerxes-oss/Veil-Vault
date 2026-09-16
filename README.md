@@ -188,6 +188,39 @@ See `docs/architecture.md`, `docs/privacy-model.md`, and `docs/threat-model.md` 
 
 ---
 
+## Roadmap
+
+### Wave 2 — real value on real value rails
+
+- **tDUST/DUST deposits backed by shielded balances** — replace the asset *label* with actual token
+  transfers built on Midnight's shielded-balance primitives (dust-wallet / shielded sync), so a vault's
+  amount is measurable in real value.
+- **Encrypted unlock secrets instead of timestamps alone** — pair the time-lock with an encrypted secret
+  the owner (and later executors) can reveal, enabling time- *or* secret-based release.
+- **Commitment scheme hardening** — amounts and ownership move fully into ZK commitments (nonce-seeded
+  `amountCommitment` style) so the public ledger proves membership without disclosing value; only
+  lifecycle events stay public.
+- **UX for pending/unconfirmed intents** — visible in-flight states (proving, balancing, submitted),
+  retry and failure recovery around the conservative TTL handling, so users never double-submit.
+- **Lifecycle extension** — richer state machine (`DEPOSITING → COMMITTED → LOCKED → RELEASABLE →
+  SETTLED`) and per-vault configuration (grace periods, penalty curves), each transition a distinct
+  Compact circuit.
+
+### Wave 3 — escrow, inheritance custody, audit
+
+- **Group escrow** — the time-lock vault becomes multi-party escrow: N-of-M approvers with per-party
+  commitments, deadline-arbitrated release, and dispute refunds, all enforced in Compact circuits, not
+  by the app.
+- **Multi-signature time-lock custody** — multiple keyholders required to remove/revoke funds, combined
+  with beneficiary recipient revocation for inheritance-style vaults.
+- **Testing discipline** — contract-level testkit-js suites for every circuit (happy path, boundary
+  timestamps, penalty math, failed assertions, replay/nonce reuse) executed against preview before any
+  patch ships, plus property tests for lifecycle invariants.
+- **Audit & mainnet** — formal review of the Compact contracts and witness handling, then the audited
+  contract deployed to mainnet.
+
+---
+
 ## Reference repos
 
 - **Create Midnight App** — scaffolding and deployment structure
