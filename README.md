@@ -251,10 +251,59 @@ Indexer endpoints (2026): `https://indexer.<preprod|preview|mainnet>.midnight.ne
 
 ## Privacy & security model
 
-- Amounts and ownership are committed via the Compact witness model; the public ledger exposes only the vault structure, treasury, and lifecycle state.
-- The UI masking of amounts with `PRIVATE` is a product-level representation, not a substitute for Midnight private state — see `docs/privacy-model.md`.
+### Public state vs Private witness
+
+Midnight's Compact separates **on-chain ledger** (public, indexer-readable) from **witnesses** (private, proof-only). VEIL Vault uses both every circuit.
+
+**Public ledger (`export ledger` in `contracts/time-locked-vault/time_locked_vault.compact:17`) — visible on-chain via indexer at `public/contract/time-locked-vault/` / GraphQL `state`:**
+
+| Ledger field | Type | Disclosure | Visibility |
+|---|---|---|---|
+| `initialized` | `Boolean` Cell | `disclose()` in `initialize` | Public — `isVaultInitialized()` query |
+| `vaultCounter` | `Counter` | `increment(1)` | Public — monotonic id |
+| `treasury` | `Bytes<32>` Cell | `disclose(treasuryAddr)` | Public — `getTreasury()` |
+| `treasuryBalance` | `Uint<128>` Cell | `+ disclose(penalty)` | Public — `getTreasuryBalance()` |
+| `ownerPublicKey` | `Bytes<32>` Cell | `disclose(deriveKey(ownerSecret))` in `constructor:68` | Public commitment, secret never leaves witness |
+| `vaultOwner` | `Map<Uint<64>, Bytes<32>>` | `disclose(ownerPublicKey)` per vault | Public — owner commitment per id |
+| `vaultAmount` | `Map<Uint<64>, Uint<128>>` | `disclose(amt)` where `amt == vaultAmountPrivate()` | Public in Wave 1 (Wave 2 moves to committed-only) |
+| `vaultUnlockTime` | `Map<Uint<64>, Uint<64>>` | `disclose(unlockTime)` | Public — unlock policy |
+| `vaultLockType` | `Map<Uint<64>, Uint<8>>` | `disclose(lockType)` (`0`=STRICT, `1`=PENALTY) | Public |
+| `vaultPenaltyBps` | `Map<Uint<64>, Uint<16>>` | `disclose(penaltyBps)` | Public |
+| `vaultState` | `Map<Uint<64>, VaultState>` | `LOCKED → WITHDRAWN / PENALTY_EXECUTED` | Public lifecycle — `getVaultState()` |
+| `vaultTermsCommitment` | `Map<Uint<64>, Bytes<32>>` | `disclose(persistentCommit([amt, unlockTime, lockType, penaltyBps], nonce))` | Public commitment, preimage private |
+
+All reads go through `createPatchedPublicDataProvider → contractState → ContractState.deserialize → ledger()` — no private field is ever `lookup()`'d without `disclose()` gating.
+
+**Private witnesses (`witness` in `time_locked_vault.compact:36` + `contracts/time-locked-vault/witnesses.ts:4`) — stored only in `VeilVaultPrivateState` (browser `veil-vault-private-meta-v1:<address>`, never on-chain):**
+
+| Witness | `VeilVaultPrivateState` field | Used in | Role |
+|---|---|---|---|
+| `ownerSecret(): Bytes<32>` | `secretKey` | `constructor`, `createVault`, `withdraw`, `withdrawWithPenalty` | Private key → `deriveKey(sk)=persistentHash([pad("veil:vault:key"), sk]):47` → `ownerPublicKey`; `assert(deriveKey(ownerSecret)==vaultOwner.lookup)` proves ownership without revealing `sk` |
+| `vaultAmountPrivate(): Uint<128>` | `amount` | `createVault` | Asserts `amt == amount:105` then committed + disclosed; binds private intent to public `vaultAmount` |
+| `vaultNonce(): Bytes<32>` | `nonce` | `createVault`, `withdraw`, `withdrawWithPenalty` | Random 32B for `persistentCommit<Vector<4,Bytes<32>>>([amt, unlockTime, lockType, penaltyBps], nonce):108` → `vaultTermsCommitment`; recomputed on withdraw to prove terms unchanged |
+| `vaultPenalty(): Uint<128>` | `penalty` | `withdrawWithPenalty` | `assert(penalty*10000==amount*penaltyBps)` (early) or `==0` (unlocked):210 → `treasuryBalance += disclose(penalty):215` |
+| `currentTime(): Uint<64>` | `currentTime` | `createVault`, `withdraw`, `withdrawWithPenalty` | `assert(unlockTime > currentTime())` on create, `assert(currentTime() >= unlockTime)` on withdraw |
+| `ownerProof(): Bytes<32>` | `ownerProof` (reserved) | declared `witness ownerProof(): Bytes<32>:38` | Reserved for future N-of-M / delegated proof (not consumed in Wave 1 circuits) |
+
+**How the proof ties them:**
+
+```text
+createVault:  private (secretKey, amount, nonce, currentTime)
+              → deriveKey + persistentCommit → disclose() → public ledger
+              → ZK proof: "I know sk/nonce s.t. commitment opens and time is valid"
+withdraw:     private (secretKey, nonce, currentTime)
+              → recompute commitment, check deriveKey == vaultOwner, check time ≥ unlock
+              → disclose() state transition LOCKED → WITHDRAWN
+withdrawWithPenalty:
+              private (secretKey, nonce, penalty, currentTime)
+              → same owner + commitment check + penalty arithmetic proof
+              → disclose(penalty) funds treasury, disclose(ownerPayout) returns to caller
+```
+
+> **UI `PRIVATE` masking is not the privacy.** The frontend shows `PRIVATE` by default for product clarity, but real privacy is the witness never hitting the ledger. See `docs/privacy-model.md:5` for visibility table and `docs/threat-model.md:30` for leakage defenses.
+
 - Wave 1 intentionally does **not** move tokens: the asset field is a label, and the treasury is a random locally-generated 32-byte key. Real Dust/token transfer and shielded balances are pipeline items.
-- The wallet approval flow re-triggers per action; the app never holds signing keys.
+- The wallet approval flow re-triggers per action; the app never holds signing keys. Private state is scoped per contract address (`veil-vault-private-meta-v1:<address>`) — withdrawals only work from the browser that created the vault.
 
 See `docs/architecture.md`, `docs/privacy-model.md`, and `docs/threat-model.md` for details.
 
