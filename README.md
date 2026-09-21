@@ -63,6 +63,66 @@ pages → useVaultApp → src/lib/vaultContract.ts → quoted providers (midnigh
 
 ---
 
+## Toolchain
+
+Verified on **2026-09-21** (Node `v22.22.0`, npm `10.9.4`, Linux x64).
+
+### Compact toolchain (installed)
+
+| Component | Version | Source / Notes |
+|---|---|---|
+| `compact` wrapper | `0.5.1` | `~/.local/bin/compact` (`compact --version`) |
+| Compact compiler (active) | `0.31.1` | `compact list` → `→ 0.31.1 - x86_macos, aarch64_macos, x86_linux, aarch64_linux` |
+| Compact compiler (available) | `0.34.0`, `0.31.0`, `0.30.0`, `0.29.0`, `0.28.0`, `0.26.0`, `0.25.0`, `0.24.0`, `0.23.0`, `0.22.0` | `compact list` |
+| Compact language | `0.23.0` | `contracts/managed/.../compiler/contract-info.json` → `language-version` |
+| Compact runtime | `0.16.0` | `contract-info.json` → `runtime-version` + `compact-runtime@0.16.0` + `contract/index.js` → `checkRuntimeVersion('0.16.0')` |
+| `compactc` binary | `0.31.1` | `~/.compact/versions/0.31.1/x86_64-unknown-linux-musl/compactc` |
+
+### JS / Build toolchain (installed)
+
+| Component | Version |
+|---|---|
+| Node.js | `v22.22.0` |
+| npm | `10.9.4` |
+| TypeScript | `5.7.2` |
+| Vite | `5.4.11` |
+| `@midnight-ntwrk/compact-js` | `2.5.1` (exact pinned — `2.5.3` requires unpublished `ledger-v9`) |
+| `@midnight-ntwrk/compact-runtime` | `0.16.0` |
+| `@midnight-ntwrk/ledger-v8` | `8.1.2` (deduped via override — `npm ls ledger-v8` shows single copy) |
+| `@midnight-ntwrk/midnight-js-contracts` | `4.1.1` |
+| `@midnight-ntwrk/testkit-js` | `4.1.1` |
+| `@midnight-ntwrk/ledger` | `4.0.0` |
+
+### Contract that compiles via `compact compile` (verified)
+
+**Source:** `contracts/time-locked-vault/time_locked_vault.compact` (245 lines, `pragma language_version >= 0.20`, 8 circuits)
+
+```bash
+compact compile contracts/time-locked-vault/time_locked_vault.compact contracts/managed/time-locked-vault
+# or
+npm run compile   # → compact compile contracts/time-locked-vault/time_locked_vault.compact contracts/managed/time-locked-vault
+
+# verified fresh 2026-09-21:
+compact compile contracts/time-locked-vault/time_locked_vault.compact /tmp/veil-verify-compile
+# => Compiling 8 circuits:  EXIT 0
+# => /tmp/veil-verify-compile/{compiler,contract,keys,zkir}
+```
+
+**Output (matches `contracts/managed/time-locked-vault/time_locked_vault/`):**
+
+| Artifact | Location | Contents |
+|---|---|---|
+| Contract JS | `contract/index.js` + `index.d.ts` | `checkRuntimeVersion('0.16.0')`, `Ledger` + `Witnesses` + `Circuits` types |
+| Compiler info | `compiler/contract-info.json` | `compiler-version 0.31.1 / language 0.23.0 / runtime 0.16.0`, 8 circuits + 5 witnesses + 12 ledger entries |
+| Keys | `keys/*.prover` + `*.verifier` | 16 files — `initialize`, `createVault`, `withdraw`, `withdrawWithPenalty`, `isVaultInitialized`, `getTreasury`, `getTreasuryBalance`, `getVaultState` |
+| ZKIR | `zkir/*.zkir` + `*.bzkir` | 16 files — same 8 circuits |
+
+**Circuits compiled (8):** `initialize` (k=9, 319 rows), `createVault` (k=14, 8470 rows), `withdraw` (k=14, 11918 rows), `withdrawWithPenalty` (k=14, 12430 rows), `getVaultState` (k=7, 112 rows), `isVaultInitialized` (k=6, 26 rows), `getTreasury` (k=6, 48 rows), `getTreasuryBalance` (k=6, 26 rows) — see `contracts/time-locked-vault/.circuit-info.json`.
+
+> ZK assets are synced to `public/contract/time-locked-vault/` via `npm run sync:zk` for the wallet/proof server.
+
+---
+
 ## Getting started
 
 Requires Node.js **≥ 22**.
