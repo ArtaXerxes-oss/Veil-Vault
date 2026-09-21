@@ -34,6 +34,14 @@ The address is bound automatically on startup (saved localStorage wins, then env
 
 ---
 
+## Video Demo
+
+[![VEIL Vault — Video Demo](https://img.youtube.com/vi/dyCqXgBnkgE/maxresdefault.jpg)](https://youtu.be/dyCqXgBnkgE?si=vp7PBt19bv0XHSBc)
+
+**Watch:** https://youtu.be/dyCqXgBnkgE?si=vp7PBt19bv0XHSBc — full product loop: wallet connect → deploy/initialize → createVault → strict/penalty withdraw.
+
+---
+
 ## ScreenShot Of Compiled Contract
 
 ![Compiled_Contract](public/compact.png)
