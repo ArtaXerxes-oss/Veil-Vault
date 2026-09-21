@@ -1,5 +1,7 @@
 # VEIL Vault
 
+[![CI](https://github.com/ArtaXerxes-oss/Veil-Vault/actions/workflows/ci.yml/badge.svg)](https://github.com/ArtaXerxes-oss/Veil-Vault/actions/workflows/ci.yml)
+
 **VEIL Vault** is a private, time-locked asset vault for the [Midnight](https://midnight.network) blockchain. It is Wave 1 of a fintech product loop: connect a real Midnight wallet (1AM/Lace), deploy and initialize a real **Compact** contract, create private vaults via a real `createVault` circuit call, and withdraw on time or exit early with a penalty.
 
 The frontend talks directly to the live chain — no simulation. Balances and ownership live in Compact **private state**; commitments, vault counters, treasury, and lifecycle status are readable from the Midnight indexer.
