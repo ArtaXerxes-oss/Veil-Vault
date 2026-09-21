@@ -4,7 +4,7 @@
 
 The frontend talks directly to the live chain — no simulation. Balances and ownership live in Compact **private state**; commitments, vault counters, treasury, and lifecycle status are readable from the Midnight indexer.
 
-> **Current deployment status:** a real contract is deployed on **preprod** and wired into the app by default. It is *deployed but not yet initialized* — initialize it from the **Deploy** page (`#/deploy`) once you've connected your wallet.
+> **Current deployment status:** a real contract is deployed on **preprod** and wired into the app by default. It is _deployed but not yet initialized_ — initialize it from the **Deploy** page (`#/deploy`) once you've connected your wallet.
 
 ---
 
@@ -23,16 +23,24 @@ The visual layer is intentionally quiet and financial: sensitive values are show
 
 ## Deployed contract
 
-| Field | Value |
-|---|---|
-| Address | `ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed` |
-| Network | **preprod** (verified live — preprod indexer returns state; preview returns none) |
-| Status | Deployed, **not initialized** (`initialized=false`, `treasury=0x00…00`, `vaultCounter=0`) |
+| Field    | Value                                                                                       |
+| -------- | ------------------------------------------------------------------------------------------- |
+| Address  | `ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed`                          |
+| Network  | **preprod** (verified live — preprod indexer returns state; preview returns none)           |
+| Status   | Deployed, **not initialized** (`initialized=false`, `treasury=0x00…00`, `vaultCounter=0`)   |
 | Bound by | `.env.local` → `VITE_CONTRACT_ADDRESS` with a hardcoded fallback `DEFAULT_CONTRACT_ADDRESS` |
 
 The address is bound automatically on startup (saved localStorage wins, then env, then the code fallback), so the **Deploy** page already shows it as the current contract. The only remaining step is **Initialize contract** — a real signed transaction that only your wallet can produce.
 
 ---
+
+## ScreenShot Of Compiled Contract
+
+![Compiled_Contract](public/compact.png)
+
+## ScreenShot Of Deployed Contract With Address
+
+![Deployed_Contract](public/deployed.png)
 
 ## Architecture
 
@@ -69,29 +77,29 @@ Verified on **2026-09-21** (Node `v22.22.0`, npm `10.9.4`, Linux x64).
 
 ### Compact toolchain (installed)
 
-| Component | Version | Source / Notes |
-|---|---|---|
-| `compact` wrapper | `0.5.1` | `~/.local/bin/compact` (`compact --version`) |
-| Compact compiler (active) | `0.31.1` | `compact list` → `→ 0.31.1 - x86_macos, aarch64_macos, x86_linux, aarch64_linux` |
-| Compact compiler (available) | `0.34.0`, `0.31.0`, `0.30.0`, `0.29.0`, `0.28.0`, `0.26.0`, `0.25.0`, `0.24.0`, `0.23.0`, `0.22.0` | `compact list` |
-| Compact language | `0.23.0` | `contracts/managed/.../compiler/contract-info.json` → `language-version` |
-| Compact runtime | `0.16.0` | `contract-info.json` → `runtime-version` + `compact-runtime@0.16.0` + `contract/index.js` → `checkRuntimeVersion('0.16.0')` |
-| `compactc` binary | `0.31.1` | `~/.compact/versions/0.31.1/x86_64-unknown-linux-musl/compactc` |
+| Component                    | Version                                                                                            | Source / Notes                                                                                                              |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `compact` wrapper            | `0.5.1`                                                                                            | `~/.local/bin/compact` (`compact --version`)                                                                                |
+| Compact compiler (active)    | `0.31.1`                                                                                           | `compact list` → `→ 0.31.1 - x86_macos, aarch64_macos, x86_linux, aarch64_linux`                                            |
+| Compact compiler (available) | `0.34.0`, `0.31.0`, `0.30.0`, `0.29.0`, `0.28.0`, `0.26.0`, `0.25.0`, `0.24.0`, `0.23.0`, `0.22.0` | `compact list`                                                                                                              |
+| Compact language             | `0.23.0`                                                                                           | `contracts/managed/.../compiler/contract-info.json` → `language-version`                                                    |
+| Compact runtime              | `0.16.0`                                                                                           | `contract-info.json` → `runtime-version` + `compact-runtime@0.16.0` + `contract/index.js` → `checkRuntimeVersion('0.16.0')` |
+| `compactc` binary            | `0.31.1`                                                                                           | `~/.compact/versions/0.31.1/x86_64-unknown-linux-musl/compactc`                                                             |
 
 ### JS / Build toolchain (installed)
 
-| Component | Version |
-|---|---|
-| Node.js | `v22.22.0` |
-| npm | `10.9.4` |
-| TypeScript | `5.7.2` |
-| Vite | `5.4.11` |
-| `@midnight-ntwrk/compact-js` | `2.5.1` (exact pinned — `2.5.3` requires unpublished `ledger-v9`) |
-| `@midnight-ntwrk/compact-runtime` | `0.16.0` |
-| `@midnight-ntwrk/ledger-v8` | `8.1.2` (deduped via override — `npm ls ledger-v8` shows single copy) |
-| `@midnight-ntwrk/midnight-js-contracts` | `4.1.1` |
-| `@midnight-ntwrk/testkit-js` | `4.1.1` |
-| `@midnight-ntwrk/ledger` | `4.0.0` |
+| Component                               | Version                                                               |
+| --------------------------------------- | --------------------------------------------------------------------- |
+| Node.js                                 | `v22.22.0`                                                            |
+| npm                                     | `10.9.4`                                                              |
+| TypeScript                              | `5.7.2`                                                               |
+| Vite                                    | `5.4.11`                                                              |
+| `@midnight-ntwrk/compact-js`            | `2.5.1` (exact pinned — `2.5.3` requires unpublished `ledger-v9`)     |
+| `@midnight-ntwrk/compact-runtime`       | `0.16.0`                                                              |
+| `@midnight-ntwrk/ledger-v8`             | `8.1.2` (deduped via override — `npm ls ledger-v8` shows single copy) |
+| `@midnight-ntwrk/midnight-js-contracts` | `4.1.1`                                                               |
+| `@midnight-ntwrk/testkit-js`            | `4.1.1`                                                               |
+| `@midnight-ntwrk/ledger`                | `4.0.0`                                                               |
 
 ### Contract that compiles via `compact compile` (verified)
 
@@ -110,12 +118,12 @@ compact compile contracts/time-locked-vault/time_locked_vault.compact /tmp/veil-
 
 **Output (matches `contracts/managed/time-locked-vault/time_locked_vault/`):**
 
-| Artifact | Location | Contents |
-|---|---|---|
-| Contract JS | `contract/index.js` + `index.d.ts` | `checkRuntimeVersion('0.16.0')`, `Ledger` + `Witnesses` + `Circuits` types |
-| Compiler info | `compiler/contract-info.json` | `compiler-version 0.31.1 / language 0.23.0 / runtime 0.16.0`, 8 circuits + 5 witnesses + 12 ledger entries |
-| Keys | `keys/*.prover` + `*.verifier` | 16 files — `initialize`, `createVault`, `withdraw`, `withdrawWithPenalty`, `isVaultInitialized`, `getTreasury`, `getTreasuryBalance`, `getVaultState` |
-| ZKIR | `zkir/*.zkir` + `*.bzkir` | 16 files — same 8 circuits |
+| Artifact      | Location                           | Contents                                                                                                                                              |
+| ------------- | ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Contract JS   | `contract/index.js` + `index.d.ts` | `checkRuntimeVersion('0.16.0')`, `Ledger` + `Witnesses` + `Circuits` types                                                                            |
+| Compiler info | `compiler/contract-info.json`      | `compiler-version 0.31.1 / language 0.23.0 / runtime 0.16.0`, 8 circuits + 5 witnesses + 12 ledger entries                                            |
+| Keys          | `keys/*.prover` + `*.verifier`     | 16 files — `initialize`, `createVault`, `withdraw`, `withdrawWithPenalty`, `isVaultInitialized`, `getTreasury`, `getTreasuryBalance`, `getVaultState` |
+| ZKIR          | `zkir/*.zkir` + `*.bzkir`          | 16 files — same 8 circuits                                                                                                                            |
 
 **Circuits compiled (8):** `initialize` (k=9, 319 rows), `createVault` (k=14, 8470 rows), `withdraw` (k=14, 11918 rows), `withdrawWithPenalty` (k=14, 12430 rows), `getVaultState` (k=7, 112 rows), `isVaultInitialized` (k=6, 26 rows), `getTreasury` (k=6, 48 rows), `getTreasuryBalance` (k=6, 26 rows) — see `contracts/time-locked-vault/.circuit-info.json`.
 
@@ -158,7 +166,7 @@ Install and unlock **1AM** (recommended) or **Lace**. The app's wallet adapter l
 
 - **`#/`** — landing page.
 - **`#/app`** — dashboard: real on-chain vaults, treasury address/balance, live status.
-- **`#/create`** — new vault form. Editable at all times; the **submit button unlocks only when** you are connected, a contract is bound, *and* the contract is initialized (targeted hints tell you which step is missing).
+- **`#/create`** — new vault form. Editable at all times; the **submit button unlocks only when** you are connected, a contract is bound, _and_ the contract is initialized (targeted hints tell you which step is missing).
 - **`#/deploy`** — deploy a new contract, bind an existing address, or **initialize the treasury** (fetches real state from the indexer).
 - **`#/vault/:id`** — vault detail: status (`EMPTY` → `LOCKED` → `READY` → `WITHDRAWN` / `PENALTY_EXECUTED`), strict withdraw, early penalty exit.
 - **`#/history`** — transaction log (deploys, initializes, creates, withdrawals) persisted to `localStorage`.
@@ -207,8 +215,12 @@ npm run build:contract
 The app's real read path — `createPatchedPublicDataProvider` → `contractAction(address) { state ... }` → `ContractState.deserialize` → compiled `ledger()` — decodes the deployed contract as:
 
 ```json
-{ "initialized": false, "vaultCounter": 0, "treasuryBalance": "0",
-  "treasury": "0000000000000000000000000000000000000000000000000000000000000000" }
+{
+  "initialized": false,
+  "vaultCounter": 0,
+  "treasuryBalance": "0",
+  "treasury": "0000000000000000000000000000000000000000000000000000000000000000"
+}
 ```
 
 Indexer endpoints (2026): `https://indexer.<preprod|preview|mainnet>.midnight.network/api/v4/graphql` (WebSocket at `/api/v4/graphql/ws`).
@@ -252,18 +264,18 @@ See `docs/architecture.md`, `docs/privacy-model.md`, and `docs/threat-model.md` 
 
 ### Wave 2 — real value on real value rails
 
-- **tDUST/DUST deposits backed by shielded balances** — replace the asset *label* with actual token
+- **tDUST/DUST deposits backed by shielded balances** — replace the asset _label_ with actual token
   transfers built on Midnight's shielded-balance primitives (dust-wallet / shielded sync), so a vault's
   amount is measurable in real value.
 - **Encrypted unlock secrets instead of timestamps alone** — pair the time-lock with an encrypted secret
-  the owner (and later executors) can reveal, enabling time- *or* secret-based release.
+  the owner (and later executors) can reveal, enabling time- _or_ secret-based release.
 - **Commitment scheme hardening** — amounts and ownership move fully into ZK commitments (nonce-seeded
   `amountCommitment` style) so the public ledger proves membership without disclosing value; only
   lifecycle events stay public.
 - **UX for pending/unconfirmed intents** — visible in-flight states (proving, balancing, submitted),
   retry and failure recovery around the conservative TTL handling, so users never double-submit.
 - **Lifecycle extension** — richer state machine (`DEPOSITING → COMMITTED → LOCKED → RELEASABLE →
-  SETTLED`) and per-vault configuration (grace periods, penalty curves), each transition a distinct
+SETTLED`) and per-vault configuration (grace periods, penalty curves), each transition a distinct
   Compact circuit.
 
 ### Wave 3 — escrow, inheritance custody, audit
