@@ -310,8 +310,48 @@ withdrawWithPenalty:
 
 > **UI `PRIVATE` masking is not the privacy.** The frontend shows `PRIVATE` by default for product clarity, but real privacy is the witness never hitting the ledger. See `docs/privacy-model.md:5` for visibility table and `docs/threat-model.md:30` for leakage defenses.
 
+### What an observer can and cannot learn
+
+An **observer** = anyone with the contract address + Midnight indexer/GraphQL (`indexer.preprod.midnight.network/api/v4/graphql`) — no wallet, no private state, no proof.
+
+**Can learn (public ledger — `disclose()`'d on-chain):**
+
+| Can see | Example value | Where |
+|---|---|---|
+| Contract is initialized | `initialized=true/false` via `isVaultInitialized()` | `time_locked_vault.compact:17` |
+| How many vaults exist | `vaultCounter=3` | Counter query |
+| Treasury address + balance | `treasury=0x…`, `treasuryBalance=250` via `getTreasury/getTreasuryBalance` | Public settlement accounting |
+| Per-vault lifecycle | `vaultState[42]=LOCKED` via `getVaultState(42)` | Anyone can track state machine `EMPTY→LOCKED→WITHDRAWN/PENALTY_EXECUTED` |
+| Per-vault policy | `vaultUnlockTime[42]=1735689600`, `vaultLockType[42]=1`, `vaultPenaltyBps[42]=500` | Public time-lock/penalty terms |
+| Per-vault owner commitment | `vaultOwner[42]=0x9f…` | Commitment, not the secret — only the 32B `persistentHash([pad("veil:vault:key"), secretKey])` |
+| Per-vault terms commitment | `vaultTermsCommitment[42]=0xab…` | `persistentCommit([amount, unlockTime, lockType, penaltyBps], nonce)` — checks integrity, but preimage hidden |
+| Amount (Wave 1 only) | `vaultAmount[42]=1000` | **Wave 1 discloses amount** (`disclose(amt):120`) — Wave 2 will move this to commitment-only |
+
+An observer watching the indexer sees: *"Vault #42 is LOCKED, penalty vault, unlocks 2025-12-31, owned by commitment 0x9f…, terms hash 0xab…"* — but nothing else.
+
+**Cannot learn (private witnesses + local storage — never on-chain):**
+
+| Cannot see | Why | Location |
+|---|---|---|
+| `secretKey` (`ownerSecret`) | Only witness, `deriveKey` hashes it — raw 32B never `disclose()`'d | `witnesses.ts:14` → `VeilVaultPrivateState.secretKey` |
+| `nonce` preimage | Only inside `persistentCommit` preimage — observer sees only 32B hash | `witnesses.ts:22` |
+| Linkage of `vaultTermsCommitment` to its fields without nonce | Commitment is hiding — need `nonce` + all 4 fields to recompute | `time_locked_vault.compact:108` |
+| `ownerProof` delegation material | Reserved witness not yet used | `witness ownerProof:38` |
+| Browser-local amount/nonce pairing | Stored under `localStorage: veil-vault-private-meta-v1:<address>` — per-browser, deleted if cleared | `src/lib/vaultContract.ts` |
+| Who the owner commitment belongs to | `vaultOwner` is a hash, no on-chain mapping to wallet address — only holder of `secretKey` can produce `assert(deriveKey(secret)==owner)` on withdraw | `withdraw:146` + `withdrawWithPenalty:186` |
+
+**Concrete example — vault #2 created via `createVault(2, 1000, 1735689600, 1, 500)`:**
+
+```text
+Observer sees on indexer:  vaultOwner[2]=0x9f…, vaultAmount[2]=1000, vaultState[2]=LOCKED, vaultTermsCommitment[2]=0xab…, unlock=1735689600
+Observer cannot see:       secretKey=0x12… (32B), nonce=0x77… (32B), that 0xab… = Commit([1000,1735689600,1,500], 0x77…)
+Withdraw proof:            prover locally injects secretKey+nonce+currentTime, recomputes 0xab… and deriveKey, ZK verifier checks equality — no secret leaves browser
+Penalty case:              observer sees treasuryBalance +50 after early withdraw, but never sees penalty preimage 50 derived as amount*penaltyBps/10000 inside private witness
+```
+
 - Wave 1 intentionally does **not** move tokens: the asset field is a label, and the treasury is a random locally-generated 32-byte key. Real Dust/token transfer and shielded balances are pipeline items.
 - The wallet approval flow re-triggers per action; the app never holds signing keys. Private state is scoped per contract address (`veil-vault-private-meta-v1:<address>`) — withdrawals only work from the browser that created the vault.
+- **Wave 2 privacy hardening:** `vaultAmount` will no longer be `disclose()`'d — observer will see only `vaultTermsCommitment`. Amount privacy then matches `docs/privacy-model.md:11` ("Amount | Private").
 
 See `docs/architecture.md`, `docs/privacy-model.md`, and `docs/threat-model.md` for details.
 
