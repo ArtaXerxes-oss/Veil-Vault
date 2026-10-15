@@ -44,6 +44,8 @@ The address is bound automatically on startup (saved localStorage wins, then env
 
 **Watch:** https://youtu.be/dyCqXgBnkgE?si=vp7PBt19bv0XHSBc — full product loop: wallet connect → deploy/initialize → createVault → strict/penalty withdraw.
 
+**Pitch deck:** https://gamma.app/docs/VEIL-Vault-ypg0jo0ifligaen
+
 ---
 
 ## ScreenShot Of Compiled Contract

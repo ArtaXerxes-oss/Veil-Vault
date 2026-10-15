@@ -1,5 +1,6 @@
 # VEIL Vault — Buildathon Slide Deck (Wave 2)
 
+Pitch: https://gamma.app/docs/VEIL-Vault-ypg0jo0ifligaen
 Submit via AKINDO with repo + video: `https://youtu.be/dyCqXgBnkgE`
 License: Apache-2.0 (`LICENSE`). Topics: `midnightntwrk, midnight, compact`.
 
