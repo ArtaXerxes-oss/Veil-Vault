@@ -76,6 +76,7 @@ constructor() {
 export circuit initialize(treasuryAddr: Bytes<32>): [] {
   assert(!initialized, "Vault already initialized");
   assert(treasuryAddr != pad(32, ""), "Invalid treasury address");
+  assert(deriveKey(ownerSecret()) == ownerPublicKey, "Only the deployer can initialize");
   initialized = true;
   treasury = disclose(treasuryAddr);
 }
@@ -116,7 +117,8 @@ export circuit createVault(
   );
 
   vaultCounter.increment(1);
-  vaultOwner.insert(disclose(vaultId), disclose(ownerPublicKey));
+  const callerPk = deriveKey(secret);
+  vaultOwner.insert(disclose(vaultId), disclose(callerPk));
   vaultAmount.insert(disclose(vaultId), disclose(amt));
   vaultUnlockTime.insert(disclose(vaultId), disclose(unlockTime));
   vaultLockType.insert(disclose(vaultId), disclose(lockType));

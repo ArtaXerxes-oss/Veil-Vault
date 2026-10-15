@@ -165,4 +165,30 @@ describe("Wave 1 time-locked vault contract", () => {
     const instance = contract("my-secret");
     assert.equal(instance.getOwnerPublicKey(), deriveKey("my-secret"));
   });
+
+  it("enforces multi-user vault ownership isolation", () => {
+    const instance = contract("deployer-secret");
+    const aliceVault = instance.createVault({
+      owner: "alice", ownerSecret: "alice-secret", asset: "NIGHT", amount: 100n,
+      unlockTime: TOMORROW, lockType: "STRICT", penaltyBps: 0, now: NOW
+    });
+    const bobVault = instance.createVault({
+      owner: "bob", ownerSecret: "bob-secret", asset: "NIGHT", amount: 200n,
+      unlockTime: TOMORROW, lockType: "STRICT", penaltyBps: 0, now: NOW
+    });
+
+    // Deployer cannot withdraw Alice's vault
+    rejects(() => instance.withdraw(aliceVault.id, "deployer", "deployer-secret", TOMORROW), "UNAUTHORIZED");
+    // Bob cannot withdraw Alice's vault
+    rejects(() => instance.withdraw(aliceVault.id, "bob", "bob-secret", TOMORROW), "UNAUTHORIZED");
+    // Alice can withdraw her own vault
+    const aliceResult = instance.withdraw(aliceVault.id, "alice", "alice-secret", TOMORROW);
+    assert.equal(aliceResult.ownerPayout, 100n);
+
+    // Alice cannot withdraw Bob's vault
+    rejects(() => instance.withdraw(bobVault.id, "alice", "alice-secret", TOMORROW), "UNAUTHORIZED");
+    // Bob can withdraw his own vault
+    const bobResult = instance.withdraw(bobVault.id, "bob", "bob-secret", TOMORROW);
+    assert.equal(bobResult.ownerPayout, 200n);
+  });
 });

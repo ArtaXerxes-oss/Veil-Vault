@@ -2,7 +2,7 @@
   "name": "veil-vault",
   "private": true,
   "version": "0.1.0",
-  "description": "VEIL Vault — a private time-locked asset vault Wave 1 implementation.",
+  "description": "VEIL Vault — a private time-locked asset vault for Midnight (Wave 2).",
   "license": "Apache-2.0",
   "keywords": ["midnightntwrk", "midnight", "compact", "zero-knowledge", "privacy", "vault"],
   "repository": {

@@ -38,6 +38,7 @@ export type VaultState = "EMPTY" | "LOCKED" | "READY" | "WITHDRAWN" | "PENALTY_E
 
 export interface CreateVaultInput {
   owner: string;
+  ownerSecret?: string;
   asset: string;
   amount: bigint;
   unlockTime: number;
@@ -89,6 +90,7 @@ export class TimeLockedVaultContract {
   private userSecret = "";
   private ownerPublicKey = "";
   private vaults = new Map<number, Vault>();
+  private vaultOwners = new Map<number, string>();
   private privateVaultData = new Map<number, PrivateVaultData>();
   private transactions: TransactionRecord[] = [];
 
@@ -106,6 +108,7 @@ export class TimeLockedVaultContract {
     this.userSecret = userSecret;
     this.ownerPublicKey = deriveKey(userSecret);
     this.vaults.clear();
+    this.vaultOwners.clear();
     this.privateVaultData.clear();
     this.transactions = [];
   }
@@ -153,6 +156,8 @@ export class TimeLockedVaultContract {
     };
 
     this.vaults.set(id, vault);
+    const vaultOwnerSecret = input.ownerSecret ?? this.userSecret;
+    this.vaultOwners.set(id, deriveKey(vaultOwnerSecret));
     this.privateVaultData.set(id, {
       nonce,
       amount: input.amount,
@@ -176,7 +181,7 @@ export class TimeLockedVaultContract {
     if (!vault) {
       throw new ContractError("VAULT_NOT_FOUND", "That vault does not exist.");
     }
-    if (!this.verifyOwner(callerProof)) {
+    if (!this.verifyOwner(callerProof, vaultId)) {
       throw new ContractError("UNAUTHORIZED", "Only the vault owner can withdraw.");
     }
     if (vault.status === "WITHDRAWN") {
@@ -234,7 +239,7 @@ export class TimeLockedVaultContract {
     if (!vault) {
       throw new ContractError("VAULT_NOT_FOUND", "That vault does not exist.");
     }
-    if (!this.verifyOwner(callerProof)) {
+    if (!this.verifyOwner(callerProof, vaultId)) {
       throw new ContractError("UNAUTHORIZED", "Only the vault owner can withdraw.");
     }
     if (vault.status === "WITHDRAWN") {
@@ -380,7 +385,10 @@ export class TimeLockedVaultContract {
     return contract;
   }
 
-  private verifyOwner(callerProof: string): boolean {
+  private verifyOwner(callerProof: string, vaultId?: number): boolean {
+    if (vaultId !== undefined && this.vaultOwners.has(vaultId)) {
+      return deriveKey(callerProof) === this.vaultOwners.get(vaultId);
+    }
     return deriveKey(callerProof) === this.ownerPublicKey;
   }
 

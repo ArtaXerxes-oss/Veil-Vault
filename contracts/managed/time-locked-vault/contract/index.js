@@ -129,42 +129,42 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('createVault',
                                      'argument 1 (as invoked from Typescript)',
-                                     'time_locked_vault.compact line 87 char 1',
+                                     'time_locked_vault.compact line 88 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
         if (!(typeof(vaultId_0) === 'bigint' && vaultId_0 >= 0n && vaultId_0 <= 18446744073709551615n)) {
           __compactRuntime.typeError('createVault',
                                      'argument 1 (argument 2 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 87 char 1',
+                                     'time_locked_vault.compact line 88 char 1',
                                      'Uint<0..18446744073709551616>',
                                      vaultId_0)
         }
         if (!(typeof(amount_0) === 'bigint' && amount_0 >= 0n && amount_0 <= 340282366920938463463374607431768211455n)) {
           __compactRuntime.typeError('createVault',
                                      'argument 2 (argument 3 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 87 char 1',
+                                     'time_locked_vault.compact line 88 char 1',
                                      'Uint<0..340282366920938463463374607431768211456>',
                                      amount_0)
         }
         if (!(typeof(unlockTime_0) === 'bigint' && unlockTime_0 >= 0n && unlockTime_0 <= 18446744073709551615n)) {
           __compactRuntime.typeError('createVault',
                                      'argument 3 (argument 4 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 87 char 1',
+                                     'time_locked_vault.compact line 88 char 1',
                                      'Uint<0..18446744073709551616>',
                                      unlockTime_0)
         }
         if (!(typeof(lockType_0) === 'bigint' && lockType_0 >= 0n && lockType_0 <= 255n)) {
           __compactRuntime.typeError('createVault',
                                      'argument 4 (argument 5 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 87 char 1',
+                                     'time_locked_vault.compact line 88 char 1',
                                      'Uint<0..256>',
                                      lockType_0)
         }
         if (!(typeof(penaltyBps_0) === 'bigint' && penaltyBps_0 >= 0n && penaltyBps_0 <= 65535n)) {
           __compactRuntime.typeError('createVault',
                                      'argument 5 (argument 6 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 87 char 1',
+                                     'time_locked_vault.compact line 88 char 1',
                                      'Uint<0..65536>',
                                      penaltyBps_0)
         }
@@ -197,14 +197,14 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('withdraw',
                                      'argument 1 (as invoked from Typescript)',
-                                     'time_locked_vault.compact line 132 char 1',
+                                     'time_locked_vault.compact line 134 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
         if (!(typeof(vaultId_0) === 'bigint' && vaultId_0 >= 0n && vaultId_0 <= 18446744073709551615n)) {
           __compactRuntime.typeError('withdraw',
                                      'argument 1 (argument 2 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 132 char 1',
+                                     'time_locked_vault.compact line 134 char 1',
                                      'Uint<0..18446744073709551616>',
                                      vaultId_0)
         }
@@ -232,21 +232,21 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('withdrawWithPenalty',
                                      'argument 1 (as invoked from Typescript)',
-                                     'time_locked_vault.compact line 170 char 1',
+                                     'time_locked_vault.compact line 172 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
         if (!(typeof(vaultId_0) === 'bigint' && vaultId_0 >= 0n && vaultId_0 <= 18446744073709551615n)) {
           __compactRuntime.typeError('withdrawWithPenalty',
                                      'argument 1 (argument 2 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 170 char 1',
+                                     'time_locked_vault.compact line 172 char 1',
                                      'Uint<0..18446744073709551616>',
                                      vaultId_0)
         }
         if (!(typeof(penaltyBps_0) === 'bigint' && penaltyBps_0 >= 0n && penaltyBps_0 <= 65535n)) {
           __compactRuntime.typeError('withdrawWithPenalty',
                                      'argument 2 (argument 3 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 170 char 1',
+                                     'time_locked_vault.compact line 172 char 1',
                                      'Uint<0..65536>',
                                      penaltyBps_0)
         }
@@ -276,14 +276,14 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('getVaultState',
                                      'argument 1 (as invoked from Typescript)',
-                                     'time_locked_vault.compact line 231 char 1',
+                                     'time_locked_vault.compact line 233 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
         if (!(typeof(vaultId_0) === 'bigint' && vaultId_0 >= 0n && vaultId_0 <= 18446744073709551615n)) {
           __compactRuntime.typeError('getVaultState',
                                      'argument 1 (argument 2 as invoked from Typescript)',
-                                     'time_locked_vault.compact line 231 char 1',
+                                     'time_locked_vault.compact line 233 char 1',
                                      'Uint<0..18446744073709551616>',
                                      vaultId_0)
         }
@@ -311,7 +311,7 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('isVaultInitialized',
                                      'argument 1 (as invoked from Typescript)',
-                                     'time_locked_vault.compact line 235 char 1',
+                                     'time_locked_vault.compact line 237 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
@@ -334,7 +334,7 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('getTreasury',
                                      'argument 1 (as invoked from Typescript)',
-                                     'time_locked_vault.compact line 239 char 1',
+                                     'time_locked_vault.compact line 241 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
@@ -357,7 +357,7 @@ export class Contract {
         if (!(typeof(contextOrig_0) === 'object' && contextOrig_0.currentQueryContext != undefined)) {
           __compactRuntime.typeError('getTreasuryBalance',
                                      'argument 1 (as invoked from Typescript)',
-                                     'time_locked_vault.compact line 243 char 1',
+                                     'time_locked_vault.compact line 245 char 1',
                                      'CircuitContext',
                                      contextOrig_0)
         }
@@ -723,6 +723,21 @@ export class Contract {
     __compactRuntime.assert(!this._equal_0(treasuryAddr_0,
                                            new Uint8Array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])),
                             'Invalid treasury address');
+    __compactRuntime.assert(this._equal_1(this._deriveKey_0(this._ownerSecret_0(context,
+                                                                                partialProofData)),
+                                          _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                                    partialProofData,
+                                                                                                    [
+                                                                                                     { dup: { n: 0 } },
+                                                                                                     { idx: { cached: false,
+                                                                                                              pushPath: false,
+                                                                                                              path: [
+                                                                                                                     { tag: 'value',
+                                                                                                                       value: { value: _descriptor_6.toValue(4n),
+                                                                                                                                alignment: _descriptor_6.alignment() } }] } },
+                                                                                                     { popeq: { cached: false,
+                                                                                                                result: undefined } }]).value)),
+                            'Only the deployer can initialize');
     __compactRuntime.queryLedgerState(context,
                                       partialProofData,
                                       [
@@ -771,27 +786,27 @@ export class Contract {
                             >
                             this._currentTime_0(context, partialProofData),
                             'Unlock time must be in the future');
-    __compactRuntime.assert(this._equal_1(lockType_0, 0n)
+    __compactRuntime.assert(this._equal_2(lockType_0, 0n)
                             ||
-                            this._equal_2(lockType_0, 1n),
+                            this._equal_3(lockType_0, 1n),
                             'Invalid lock type');
     __compactRuntime.assert(penaltyBps_0 <= 10000n, 'Penalty exceeds maximum');
     const secret_0 = this._ownerSecret_0(context, partialProofData);
     const amt_0 = this._vaultAmountPrivate_0(context, partialProofData);
     const nonce_0 = this._vaultNonce_0(context, partialProofData);
-    __compactRuntime.assert(this._equal_3(amt_0, amount_0), 'Amount mismatch');
+    __compactRuntime.assert(this._equal_4(amt_0, amount_0), 'Amount mismatch');
     const terms_0 = this._persistentCommit_0([__compactRuntime.convertFieldToBytes(32,
                                                                                    amt_0,
-                                                                                   'time_locked_vault.compact line 110 char 7'),
-                                              __compactRuntime.convertFieldToBytes(32,
-                                                                                   unlockTime_0,
                                                                                    'time_locked_vault.compact line 111 char 7'),
                                               __compactRuntime.convertFieldToBytes(32,
-                                                                                   lockType_0,
+                                                                                   unlockTime_0,
                                                                                    'time_locked_vault.compact line 112 char 7'),
                                               __compactRuntime.convertFieldToBytes(32,
+                                                                                   lockType_0,
+                                                                                   'time_locked_vault.compact line 113 char 7'),
+                                              __compactRuntime.convertFieldToBytes(32,
                                                                                    penaltyBps_0,
-                                                                                   'time_locked_vault.compact line 113 char 7')],
+                                                                                   'time_locked_vault.compact line 114 char 7')],
                                              nonce_0);
     const tmp_0 = 1n;
     __compactRuntime.queryLedgerState(context,
@@ -809,18 +824,7 @@ export class Contract {
                                                                 .value
                                                             )) } },
                                        { ins: { cached: true, n: 1 } }]);
-    const tmp_1 = _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
-                                                                            partialProofData,
-                                                                            [
-                                                                             { dup: { n: 0 } },
-                                                                             { idx: { cached: false,
-                                                                                      pushPath: false,
-                                                                                      path: [
-                                                                                             { tag: 'value',
-                                                                                               value: { value: _descriptor_6.toValue(4n),
-                                                                                                        alignment: _descriptor_6.alignment() } }] } },
-                                                                             { popeq: { cached: false,
-                                                                                        result: undefined } }]).value);
+    const callerPk_0 = this._deriveKey_0(secret_0);
     __compactRuntime.queryLedgerState(context,
                                       partialProofData,
                                       [
@@ -834,7 +838,7 @@ export class Contract {
                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_2.toValue(vaultId_0),
                                                                                               alignment: _descriptor_2.alignment() }).encode() } },
                                        { push: { storage: true,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(tmp_1),
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_0.toValue(callerPk_0),
                                                                                               alignment: _descriptor_0.alignment() }).encode() } },
                                        { ins: { cached: false, n: 1 } },
                                        { ins: { cached: true, n: 1 } }]);
@@ -889,7 +893,7 @@ export class Contract {
                                                                                               alignment: _descriptor_6.alignment() }).encode() } },
                                        { ins: { cached: false, n: 1 } },
                                        { ins: { cached: true, n: 1 } }]);
-    const tmp_2 = this._equal_4(lockType_0, 0n) ? 0n : penaltyBps_0;
+    const tmp_1 = this._equal_5(lockType_0, 0n) ? 0n : penaltyBps_0;
     __compactRuntime.queryLedgerState(context,
                                       partialProofData,
                                       [
@@ -903,7 +907,7 @@ export class Contract {
                                                  value: __compactRuntime.StateValue.newCell({ value: _descriptor_2.toValue(vaultId_0),
                                                                                               alignment: _descriptor_2.alignment() }).encode() } },
                                        { push: { storage: true,
-                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_5.toValue(tmp_2),
+                                                 value: __compactRuntime.StateValue.newCell({ value: _descriptor_5.toValue(tmp_1),
                                                                                               alignment: _descriptor_5.alignment() }).encode() } },
                                        { ins: { cached: false, n: 1 } },
                                        { ins: { cached: true, n: 1 } }]);
@@ -1054,18 +1058,18 @@ export class Contract {
                                                                                          { popeq: { cached: false,
                                                                                                     result: undefined } }]).value);
     const pk_0 = this._deriveKey_0(this._ownerSecret_0(context, partialProofData));
-    __compactRuntime.assert(this._equal_5(pk_0, ownerCommitment_0),
+    __compactRuntime.assert(this._equal_6(pk_0, ownerCommitment_0),
                             'Only the owner can withdraw');
     const n_0 = this._vaultNonce_0(context, partialProofData);
     const recomputed_0 = this._persistentCommit_0([__compactRuntime.convertFieldToBytes(32,
                                                                                         amount_0,
-                                                                                        'time_locked_vault.compact line 153 char 7'),
+                                                                                        'time_locked_vault.compact line 155 char 7'),
                                                    __compactRuntime.convertFieldToBytes(32,
                                                                                         unlockTime_0,
-                                                                                        'time_locked_vault.compact line 154 char 7'),
+                                                                                        'time_locked_vault.compact line 156 char 7'),
                                                    __compactRuntime.convertFieldToBytes(32,
                                                                                         lockType_0,
-                                                                                        'time_locked_vault.compact line 155 char 7'),
+                                                                                        'time_locked_vault.compact line 157 char 7'),
                                                    __compactRuntime.convertFieldToBytes(32,
                                                                                         _descriptor_5.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                                                                                   partialProofData,
@@ -1085,9 +1089,9 @@ export class Contract {
                                                                                                                                                                               alignment: _descriptor_2.alignment() } }] } },
                                                                                                                                                    { popeq: { cached: false,
                                                                                                                                                               result: undefined } }]).value),
-                                                                                        'time_locked_vault.compact line 156 char 7')],
+                                                                                        'time_locked_vault.compact line 158 char 7')],
                                                   n_0);
-    __compactRuntime.assert(this._equal_6(recomputed_0,
+    __compactRuntime.assert(this._equal_7(recomputed_0,
                                           _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                                     partialProofData,
                                                                                                     [
@@ -1178,7 +1182,7 @@ export class Contract {
                                                                                                              alignment: _descriptor_2.alignment() } }] } },
                                                                                   { popeq: { cached: false,
                                                                                              result: undefined } }]).value);
-    __compactRuntime.assert(this._equal_7(lockType_0, 1n),
+    __compactRuntime.assert(this._equal_8(lockType_0, 1n),
                             'Only penalty vaults support early withdrawal');
     const amount_0 = _descriptor_1.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                partialProofData,
@@ -1217,7 +1221,7 @@ export class Contract {
                                                                                     { popeq: { cached: false,
                                                                                                result: undefined } }]).value);
     const pk_0 = this._deriveKey_0(this._ownerSecret_0(context, partialProofData));
-    __compactRuntime.assert(this._equal_8(pk_0,
+    __compactRuntime.assert(this._equal_9(pk_0,
                                           _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                                     partialProofData,
                                                                                                     [
@@ -1240,13 +1244,13 @@ export class Contract {
     const n_0 = this._vaultNonce_0(context, partialProofData);
     const recomputed_0 = this._persistentCommit_0([__compactRuntime.convertFieldToBytes(32,
                                                                                         amount_0,
-                                                                                        'time_locked_vault.compact line 193 char 7'),
+                                                                                        'time_locked_vault.compact line 195 char 7'),
                                                    __compactRuntime.convertFieldToBytes(32,
                                                                                         unlockTime_0,
-                                                                                        'time_locked_vault.compact line 194 char 7'),
+                                                                                        'time_locked_vault.compact line 196 char 7'),
                                                    __compactRuntime.convertFieldToBytes(32,
                                                                                         lockType_0,
-                                                                                        'time_locked_vault.compact line 195 char 7'),
+                                                                                        'time_locked_vault.compact line 197 char 7'),
                                                    __compactRuntime.convertFieldToBytes(32,
                                                                                         _descriptor_5.fromValue(__compactRuntime.queryLedgerState(context,
                                                                                                                                                   partialProofData,
@@ -1266,37 +1270,37 @@ export class Contract {
                                                                                                                                                                               alignment: _descriptor_2.alignment() } }] } },
                                                                                                                                                    { popeq: { cached: false,
                                                                                                                                                               result: undefined } }]).value),
-                                                                                        'time_locked_vault.compact line 196 char 7')],
+                                                                                        'time_locked_vault.compact line 198 char 7')],
                                                   n_0);
-    __compactRuntime.assert(this._equal_9(recomputed_0,
-                                          _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
-                                                                                                    partialProofData,
-                                                                                                    [
-                                                                                                     { dup: { n: 0 } },
-                                                                                                     { idx: { cached: false,
-                                                                                                              pushPath: false,
-                                                                                                              path: [
-                                                                                                                     { tag: 'value',
-                                                                                                                       value: { value: _descriptor_6.toValue(11n),
-                                                                                                                                alignment: _descriptor_6.alignment() } }] } },
-                                                                                                     { idx: { cached: false,
-                                                                                                              pushPath: false,
-                                                                                                              path: [
-                                                                                                                     { tag: 'value',
-                                                                                                                       value: { value: _descriptor_2.toValue(vaultId_0),
-                                                                                                                                alignment: _descriptor_2.alignment() } }] } },
-                                                                                                     { popeq: { cached: false,
-                                                                                                                result: undefined } }]).value)),
+    __compactRuntime.assert(this._equal_10(recomputed_0,
+                                           _descriptor_0.fromValue(__compactRuntime.queryLedgerState(context,
+                                                                                                     partialProofData,
+                                                                                                     [
+                                                                                                      { dup: { n: 0 } },
+                                                                                                      { idx: { cached: false,
+                                                                                                               pushPath: false,
+                                                                                                               path: [
+                                                                                                                      { tag: 'value',
+                                                                                                                        value: { value: _descriptor_6.toValue(11n),
+                                                                                                                                 alignment: _descriptor_6.alignment() } }] } },
+                                                                                                      { idx: { cached: false,
+                                                                                                               pushPath: false,
+                                                                                                               path: [
+                                                                                                                      { tag: 'value',
+                                                                                                                        value: { value: _descriptor_2.toValue(vaultId_0),
+                                                                                                                                 alignment: _descriptor_2.alignment() } }] } },
+                                                                                                      { popeq: { cached: false,
+                                                                                                                 result: undefined } }]).value)),
                             'Invalid terms');
     const penalty_0 = this._vaultPenalty_0(context, partialProofData);
     let t_0;
     if (t_0 = this._currentTime_0(context, partialProofData),
         t_0 >= unlockTime_0)
     {
-      __compactRuntime.assert(this._equal_10(penalty_0, 0n),
+      __compactRuntime.assert(this._equal_11(penalty_0, 0n),
                               'Penalty must be 0 after unlock');
     } else {
-      __compactRuntime.assert(this._equal_11(penalty_0 * 10000n,
+      __compactRuntime.assert(this._equal_12(penalty_0 * 10000n,
                                              amount_0 * penaltyBps_0),
                               'Invalid penalty calculation');
     }
@@ -1306,7 +1310,7 @@ export class Contract {
     const penaltyDisclosed_0 = penalty_0;
     const tmp_0 = ((t1) => {
                     if (t1 > 340282366920938463463374607431768211455n) {
-                      throw new __compactRuntime.CompactError('time_locked_vault.compact line 215 char 21: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 340282366920938463463374607431768211455');
+                      throw new __compactRuntime.CompactError('time_locked_vault.compact line 217 char 21: cast from Field or Uint value to smaller Uint value failed: ' + t1 + ' is greater than 340282366920938463463374607431768211455');
                     }
                     return t1;
                   })(_descriptor_1.fromValue(__compactRuntime.queryLedgerState(context,
@@ -1440,7 +1444,7 @@ export class Contract {
     return true;
   }
   _equal_1(x0, y0) {
-    if (x0 !== y0) { return false; }
+    if (!x0.every((x, i) => y0[i] === x)) { return false; }
     return true;
   }
   _equal_2(x0, y0) {
@@ -1456,7 +1460,7 @@ export class Contract {
     return true;
   }
   _equal_5(x0, y0) {
-    if (!x0.every((x, i) => y0[i] === x)) { return false; }
+    if (x0 !== y0) { return false; }
     return true;
   }
   _equal_6(x0, y0) {
@@ -1464,11 +1468,11 @@ export class Contract {
     return true;
   }
   _equal_7(x0, y0) {
-    if (x0 !== y0) { return false; }
+    if (!x0.every((x, i) => y0[i] === x)) { return false; }
     return true;
   }
   _equal_8(x0, y0) {
-    if (!x0.every((x, i) => y0[i] === x)) { return false; }
+    if (x0 !== y0) { return false; }
     return true;
   }
   _equal_9(x0, y0) {
@@ -1476,10 +1480,14 @@ export class Contract {
     return true;
   }
   _equal_10(x0, y0) {
-    if (x0 !== y0) { return false; }
+    if (!x0.every((x, i) => y0[i] === x)) { return false; }
     return true;
   }
   _equal_11(x0, y0) {
+    if (x0 !== y0) { return false; }
+    return true;
+  }
+  _equal_12(x0, y0) {
     if (x0 !== y0) { return false; }
     return true;
   }

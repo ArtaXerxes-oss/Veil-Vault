@@ -283,7 +283,7 @@ Midnight's Compact separates **on-chain ledger** (public, indexer-readable) from
 | `treasury` | `Bytes<32>` Cell | `disclose(treasuryAddr)` | Public — `getTreasury()` |
 | `treasuryBalance` | `Uint<128>` Cell | `+ disclose(penalty)` | Public — `getTreasuryBalance()` |
 | `ownerPublicKey` | `Bytes<32>` Cell | `disclose(deriveKey(ownerSecret))` in `constructor:68` | Public commitment, secret never leaves witness |
-| `vaultOwner` | `Map<Uint<64>, Bytes<32>>` | `disclose(ownerPublicKey)` per vault | Public — owner commitment per id |
+| `vaultOwner` | `Map<Uint<64>, Bytes<32>>` | `disclose(callerPk)` per vault | Public — owner commitment derived from creator's secret |
 | `vaultAmount` | `Map<Uint<64>, Uint<128>>` | `disclose(amt)` where `amt == vaultAmountPrivate()` | Public in Wave 1 (Wave 2 moves to committed-only) |
 | `vaultUnlockTime` | `Map<Uint<64>, Uint<64>>` | `disclose(unlockTime)` | Public — unlock policy |
 | `vaultLockType` | `Map<Uint<64>, Uint<8>>` | `disclose(lockType)` (`0`=STRICT, `1`=PENALTY) | Public |
