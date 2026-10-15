@@ -79,6 +79,21 @@ export function savePrivateMeta(contractAddress: string, meta: VaultPrivateMeta)
   localStorage.setItem(`${PRIVATE_META_KEY}:${contractAddress}`, JSON.stringify(meta));
 }
 
+export function exportPrivateMetaBackup(contractAddress: string): string {
+  const meta = loadPrivateMeta(contractAddress);
+  if (!meta) throw new Error("No private vault data for this contract in this browser.");
+  return JSON.stringify({ contractAddress, exportedAt: Date.now(), meta });
+}
+
+export function importPrivateMetaBackup(json: string): string {
+  const parsed = JSON.parse(json) as { contractAddress: string; meta: VaultPrivateMeta };
+  if (!parsed?.contractAddress || !parsed?.meta?.secretKeyHex) {
+    throw new Error("Invalid backup file.");
+  }
+  savePrivateMeta(parsed.contractAddress, parsed.meta);
+  return parsed.contractAddress;
+}
+
 async function ensurePrivateState(
   session: ConnectedSession,
   contractAddress: string,

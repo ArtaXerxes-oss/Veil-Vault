@@ -6,6 +6,7 @@ import {
   type MidnightNetwork
 } from "../lib/midnight";
 import { deployVaultContract, initializeVaultContract, readLedger } from "../lib/vaultContract";
+import { getDeployReadiness } from "../lib/deployChecklist";
 import { randomBytes32, toHex } from "../lib/midnight";
 
 interface DeployPageProps {
@@ -123,17 +124,22 @@ export function DeployPage({
   }
 
   const disabled = working || busy || isConnecting;
+  const readiness = getDeployReadiness(isConnected, contractAddress, initialized);
 
   return (
     <section className="narrow-page">
       <div className="page-intro compact-intro">
-        <p className="section-kicker">CONTRACT</p>
+        <p className="section-kicker">CONTRACT — WAVE 2</p>
         <h1>Deploy Compact vault</h1>
         <p className="intro-copy">
           Connect 1AM or Lace, deploy the compiled time-locked vault to Midnight, then initialize the treasury.
-          No simulation — these are real wallet transactions.
+          No simulation — these are real wallet transactions. Next: {readiness.nextStep}
         </p>
       </div>
+
+      {!initialized && contractAddress && (
+        <div className="privacy-callout"><div><strong>Deployed, not initialized</strong><p>Bound contract needs Initialize treasury below before #/create unlocks. See docs/DEPLOY-CHECKLIST.md.</p></div></div>
+      )}
 
       {!isConnected && (
         <div className="connect-banner" style={{ marginBottom: 28 }}>

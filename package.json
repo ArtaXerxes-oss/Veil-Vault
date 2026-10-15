@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.1.0",
   "description": "VEIL Vault — a private time-locked asset vault Wave 1 implementation.",
+  "license": "Apache-2.0",
+  "keywords": ["midnightntwrk", "midnight", "compact", "zero-knowledge", "privacy", "vault"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ArtaXerxes-oss/Veil-Vault.git"
+  },
   "type": "module",
   "scripts": {
     "sync:zk": "mkdir -p public/contract/time-locked-vault && rm -rf public/contract/time-locked-vault/keys public/contract/time-locked-vault/zkir && cp -r contracts/managed/time-locked-vault/time_locked_vault/keys public/contract/time-locked-vault/ && cp -r contracts/managed/time-locked-vault/time_locked_vault/zkir public/contract/time-locked-vault/",
