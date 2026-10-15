@@ -209,12 +209,17 @@ scripts/                             deploy.ts, setup.ts
 
 ## Verification
 
+Prerequisites (verified): Node.js `v22.22.0`, npm `10.9.4`, Compact `0.5.1` / compiler `0.31.1`.
+
 ```bash
+npm install
 npm run typecheck     # tsc --noEmit
 npm test              # builds src/lib/contract.ts via esbuild, runs node --test
 npm run build         # tsc -b && vite build
 npm run lint          # eslint src
 ```
+
+Expected (verified 2026-10-15): `# tests 26 / # suites 4 / # pass 26 / # fail 0` across `tests/time-locked-vault/contract.test.ts, validation.test.ts, simulation.test.ts, contract-artifacts.test.ts`.
 
 Recompile the Compact contract / resync ZK assets:
 
@@ -398,14 +403,47 @@ SETTLED`) and per-vault configuration (grace periods, penalty curves), each tran
 
 ## Reference repos
 
-- **Create Midnight App** — scaffolding and deployment structure
-- **Midnight Escrow** — asset-locking / state-machine architecture (`EMPTY → LOCKED → READY → WITHDRAWN → PENALTY_EXECUTED`)
-- **Example ZK Loan** — private financial state and ZK validation patterns
-- **Midnight Local Dev** — local network/testing environment
-- **Midnight Wallet SDK** — wallet and transaction functionality
-- **OpenZeppelin Compact Contracts** — reusable Compact primitives
-- **Compact Tools** — compile and build tooling
-- **Midnight Doctor** — environment/version validation
+- **Create Midnight App** — scaffolding and deployment structure ([Midnight docs](https://docs.midnight.network/develop/tutorial/building))
+- **Midnight** — network and ZK primitives ([midnight.network](https://midnight.network))
+- **Midnight Escrow pattern** — asset-locking / state-machine architecture (`EMPTY → LOCKED → READY → WITHDRAWN → PENALTY_EXECUTED`)
+- **Wallet + Compact tooling** — wallet SDK, compact compiler `0.31.1`, ledger-v8 `8.1.2`
+
+---
+
+## On-chain record (Wave 2, verified from repo)
+
+| Item | Value |
+|---|---|
+| Contract | `ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed` preprod |
+| State in repo | `initialized=false, vaultCounter=0` — deploy landed, init tx pending judge wallet |
+| Explorer | `https://explorer.preview.midnight.network` pattern; preprod indexer GraphQL in `README.md:240` |
+| Tx hashes | None claimed — init/create/withdraw hashes added after judge-run, not invented |
+
+---
+
+## Self-review (not an external audit)
+
+| ID | Finding | Status |
+|---|---|---|
+| W2-1 | `vaultAmount` disclosed (`time_locked_vault.compact:120`) | Known — see `docs/privacy-limitation.md` |
+| W2-2 | Treasury is local random key, no Dust transfer | Known Wave 2 scope |
+| W2-3 | Private meta in `localStorage`, withdraw needs origin browser | Mitigated with export/import in `src/lib/vaultContract.ts:84` |
+| W2-4 | Tests cover TS model + artifacts + simulation, not live preview matrix | Documented in `tests/` |
+
+---
+
+## What's not here
+
+- No token movement — asset is a label in Wave 2.
+- No mainnet deploy — preprod only.
+- No external audit — self-review only.
+- Secrets in `scripts/` are templates; no mainnet keys in repo.
+
+---
+
+## Contributing
+
+Issues and PRs welcome. Do not commit wallets, seeds, or mainnet keys. Match `npm run typecheck && npm test && npm run build` before PR.
 
 ---
 
