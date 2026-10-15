@@ -406,3 +406,11 @@ SETTLED`) and per-vault configuration (grace periods, penalty curves), each tran
 - **OpenZeppelin Compact Contracts** — reusable Compact primitives
 - **Compact Tools** — compile and build tooling
 - **Midnight Doctor** — environment/version validation
+
+---
+
+## License
+
+Licensed under the Apache License, Version 2.0. See [LICENSE](./LICENSE).
+
+The **"VEIL Vault"** name and logo are trademarks of VEIL Vault contributors and are not licensed under Apache 2.0.
