@@ -29,7 +29,7 @@ The visual layer is intentionally quiet and financial: sensitive values are show
 
 | Field    | Value                                                                                       |
 | -------- | ------------------------------------------------------------------------------------------- |
-| Address  | `ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed`                          |
+| Address  | `4f6d1873d4d8a0f7f3fee414b817063a7fb9ab5a9654508734d989d4d564a68b`                          |
 | Network  | **preprod** (verified live — preprod indexer returns state; preview returns none)           |
 | Status   | Deployed, **not initialized** (`initialized=false`, `treasury=0x00…00`, `vaultCounter=0`)   |
 | Bound by | `.env.local` → `VITE_CONTRACT_ADDRESS` with a hardcoded fallback `DEFAULT_CONTRACT_ADDRESS` |
@@ -162,7 +162,7 @@ Create `.env.local` (git-ignored via `*.local`) and `.env`:
 
 ```ini
 # .env.local — deployed contract bound on startup
-VITE_CONTRACT_ADDRESS=ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed
+VITE_CONTRACT_ADDRESS=4f6d1873d4d8a0f7f3fee414b817063a7fb9ab5a9654508734d989d4d564a68b
 
 # .env — default network for wallet.connect(...)
 VITE_MIDNIGHT_NETWORK=preprod
@@ -420,7 +420,7 @@ With the 5 core Wave 2 capabilities shipped (commitment hardening, encrypted unl
 
 | Item | Value |
 |---|---|
-| Contract | `ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed` preprod |
+| Contract | `4f6d1873d4d8a0f7f3fee414b817063a7fb9ab5a9654508734d989d4d564a68b` preprod |
 | State in repo | `initialized=false, vaultCounter=0` — deploy landed, init tx pending judge wallet |
 | Explorer | `https://explorer.preview.midnight.network` pattern; preprod indexer GraphQL in `README.md:240` |
 | Tx hashes | None claimed — init/create/withdraw hashes added after judge-run, not invented |

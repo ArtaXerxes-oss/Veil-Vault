@@ -12,7 +12,8 @@ export const PRIVATE_STATE_ID = "veilVaultPrivateState" as const;
 export const CONTRACT_ADDRESS_KEY = "veil-vault-contract-address";
 export const LEGACY_WAVE1_CONTRACT_ADDRESS = "ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed";
 export const DEFAULT_CONTRACT_ADDRESS: string | null =
-  ((import.meta as { env?: { VITE_CONTRACT_ADDRESS?: string } }).env?.VITE_CONTRACT_ADDRESS as string | undefined) ?? null;
+  ((import.meta as { env?: { VITE_CONTRACT_ADDRESS?: string } }).env?.VITE_CONTRACT_ADDRESS as string | undefined) ??
+  "4f6d1873d4d8a0f7f3fee414b817063a7fb9ab5a9654508734d989d4d564a68b";
 export const TX_LOG_KEY = "veil-vault-tx-log-v1";
 
 export const BLOCKFROST_PREPROD_INDEXER_URI = "https://midnight-preprod.blockfrost.io/api/v0";
