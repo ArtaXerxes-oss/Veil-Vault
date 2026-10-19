@@ -30,11 +30,11 @@ The visual layer is intentionally quiet and financial: sensitive values are show
 | Field    | Value                                                                                       |
 | -------- | ------------------------------------------------------------------------------------------- |
 | Address  | `4f6d1873d4d8a0f7f3fee414b817063a7fb9ab5a9654508734d989d4d564a68b`                          |
-| Network  | **preprod** (verified live — preprod indexer returns state; preview returns none)           |
-| Status   | Deployed, **not initialized** (`initialized=false`, `treasury=0x00…00`, `vaultCounter=0`)   |
-| Bound by | `.env.local` → `VITE_CONTRACT_ADDRESS` with a hardcoded fallback `DEFAULT_CONTRACT_ADDRESS` |
+| Network  | **preprod** (verified live via Blockfrost preprod indexer)                                  |
+| Status   | **Initialized** (`initialized=true`, `treasury=0xfe09b1ba…72ce`, `vaultCounter=0`)           |
+| Bound by | `.env` / `.env.local` → `VITE_CONTRACT_ADDRESS` with code fallback `DEFAULT_CONTRACT_ADDRESS`|
 
-The address is bound automatically on startup (saved localStorage wins, then env, then the code fallback), so the **Deploy** page already shows it as the current contract. The only remaining step is **Initialize contract** — a real signed transaction that only your wallet can produce.
+The contract is fully initialized and operational. You can connect your wallet and create/manage private time-locked vaults immediately via **#/create**.
 
 ---
 
@@ -421,9 +421,9 @@ With the 5 core Wave 2 capabilities shipped (commitment hardening, encrypted unl
 | Item | Value |
 |---|---|
 | Contract | `4f6d1873d4d8a0f7f3fee414b817063a7fb9ab5a9654508734d989d4d564a68b` preprod |
-| State in repo | `initialized=false, vaultCounter=0` — deploy landed, init tx pending judge wallet |
-| Explorer | `https://explorer.preview.midnight.network` pattern; preprod indexer GraphQL in `README.md:240` |
-| Tx hashes | None claimed — init/create/withdraw hashes added after judge-run, not invented |
+| State on-chain | `initialized=true, treasury=0xfe09b1ba…72ce, vaultCounter=0` |
+| Explorer | `https://explorer.preprod.midnight.network` / Blockfrost Preprod Indexer |
+| Init Tx | `6d69646e696768743a7472616e73616374696f6e5b76395d287369676e617475…` (confirmed) |
 
 ---
 
