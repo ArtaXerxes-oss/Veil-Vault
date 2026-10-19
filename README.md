@@ -407,12 +407,12 @@ With the 5 core Wave 2 capabilities shipped (commitment hardening, encrypted unl
 
 ---
 
-## Reference repos
+## Reference ecosystem
 
-- **Create Midnight App** — scaffolding and deployment structure ([Midnight docs](https://docs.midnight.network/develop/tutorial/building))
-- **Midnight** — network and ZK primitives ([midnight.network](https://midnight.network))
-- **Midnight Escrow pattern** — asset-locking / state-machine architecture (`EMPTY → LOCKED → READY → WITHDRAWN → PENALTY_EXECUTED`)
-- **Wallet + Compact tooling** — wallet SDK, compact compiler `0.31.1`, ledger-v8 `8.1.2`
+- **Create Midnight App** — project scaffolding and deployment conventions used for app setup and local build flow ([Midnight docs](https://docs.midnight.network/develop/tutorial/building))
+- **Midnight** — network and ZK primitives used by the app, including wallet flow and Compact runtime behavior ([midnight.network](https://midnight.network))
+- **Escrow / state-machine patterns** — general lifecycle patterns for lock-and-release flows (`EMPTY → LOCKED → READY → WITHDRAWN → PENALTY_EXECUTED`), implemented in a project-specific design rather than copied from a prior product
+- **Wallet + Compact tooling** — wallet SDK, compact compiler `0.31.1`, ledger-v8 `8.1.2`, and related runtime dependencies used to compile and interact with the contract
 
 ---
 
