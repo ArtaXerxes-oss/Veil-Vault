@@ -10,9 +10,9 @@ import "@midnight-ntwrk/dapp-connector-api";
 export const ZK_ASSET_PATH = "/contract/time-locked-vault";
 export const PRIVATE_STATE_ID = "veilVaultPrivateState" as const;
 export const CONTRACT_ADDRESS_KEY = "veil-vault-contract-address";
-export const DEFAULT_CONTRACT_ADDRESS: string =
-  ((import.meta as { env?: { VITE_CONTRACT_ADDRESS?: string } }).env?.VITE_CONTRACT_ADDRESS as string | undefined) ??
-  "ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed";
+export const LEGACY_WAVE1_CONTRACT_ADDRESS = "ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed";
+export const DEFAULT_CONTRACT_ADDRESS: string | null =
+  ((import.meta as { env?: { VITE_CONTRACT_ADDRESS?: string } }).env?.VITE_CONTRACT_ADDRESS as string | undefined) ?? null;
 export const TX_LOG_KEY = "veil-vault-tx-log-v1";
 
 export const BLOCKFROST_PREPROD_INDEXER_URI = "https://midnight-preprod.blockfrost.io/api/v0";
@@ -392,7 +392,12 @@ export async function waitForStateAdvance(
 
 export function loadSavedContractAddress(): string | null {
   try {
-    return localStorage.getItem(CONTRACT_ADDRESS_KEY);
+    const saved = localStorage.getItem(CONTRACT_ADDRESS_KEY);
+    if (saved === LEGACY_WAVE1_CONTRACT_ADDRESS) {
+      localStorage.removeItem(CONTRACT_ADDRESS_KEY);
+      return null;
+    }
+    return saved;
   } catch {
     return null;
   }

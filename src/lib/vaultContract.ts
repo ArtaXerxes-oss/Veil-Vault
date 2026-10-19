@@ -150,40 +150,60 @@ export async function listOnChainVaults(
   session: ConnectedSession,
   contractAddress: string
 ): Promise<{ vaults: Vault[]; treasury: { address: string; balance: bigint }; initialized: boolean }> {
-  const chain = await readLedger(session, contractAddress);
+  let chain: Ledger | null = null;
+  try {
+    chain = await readLedger(session, contractAddress);
+  } catch (err: any) {
+    if (err?.message?.includes("expected UnsignedInteger") || err?.message?.includes("CompactError")) {
+      throw new Error(
+        `Contract ${contractAddress.slice(0, 12)}… uses an incompatible legacy (Wave 1) schema. Please deploy a new Wave 2 contract on #/deploy.`
+      );
+    }
+    throw err;
+  }
+
   const meta = loadPrivateMeta(contractAddress);
   if (!chain) {
     return { vaults: [], treasury: { address: "", balance: 0n }, initialized: false };
   }
 
   const vaults: Vault[] = [];
-  const count = Number(chain.vaultCounter);
-  for (let id = 1; id <= count; id++) {
-    const key = BigInt(id);
-    if (!chain.vaultState.member(key)) continue;
-    const lockTypeNum = Number(chain.vaultLockType.lookup(key));
-    const vaultState = mapVaultState(chain.vaultState.lookup(key));
-    const privateVault = meta?.vaults[String(id)];
-    // Amount is private (commitment only) — read from local private meta, not from chain
-    const amount = privateVault ? BigInt(privateVault.amount) : 0n;
-    // Release hash from on-chain ledger
-    const releaseHash = chain.vaultReleaseHash?.member(key)
-      ? toHex(chain.vaultReleaseHash.lookup(key))
-      : undefined;
-    vaults.push({
-      id,
-      owner: toHex(chain.vaultOwner.lookup(key)),
-      asset: privateVault?.asset ?? "tDUST",
-      amount,
-      dustAmount: amount,
-      unlockTime: Number(chain.vaultUnlockTime.lookup(key)),
-      lockType: lockTypeNum === 1 ? "PENALTY" : "STRICT",
-      penaltyBps: Number(chain.vaultPenaltyBps.lookup(key)),
-      status: vaultState === "WITHDRAWN" || vaultState === "PENALTY_EXECUTED" ? "WITHDRAWN" : "ACTIVE",
-      vaultState,
-      createdAt: privateVault?.createdAt ?? 0,
-      releaseHash
-    });
+  try {
+    const count = Number(chain.vaultCounter);
+    for (let id = 1; id <= count; id++) {
+      const key = BigInt(id);
+      if (!chain.vaultState.member(key)) continue;
+      const lockTypeNum = Number(chain.vaultLockType.lookup(key));
+      const vaultState = mapVaultState(chain.vaultState.lookup(key));
+      const privateVault = meta?.vaults[String(id)];
+      // Amount is private (commitment only) — read from local private meta, not from chain
+      const amount = privateVault ? BigInt(privateVault.amount) : 0n;
+      // Release hash from on-chain ledger
+      const releaseHash = chain.vaultReleaseHash?.member(key)
+        ? toHex(chain.vaultReleaseHash.lookup(key))
+        : undefined;
+      vaults.push({
+        id,
+        owner: toHex(chain.vaultOwner.lookup(key)),
+        asset: privateVault?.asset ?? "tDUST",
+        amount,
+        dustAmount: amount,
+        unlockTime: Number(chain.vaultUnlockTime.lookup(key)),
+        lockType: lockTypeNum === 1 ? "PENALTY" : "STRICT",
+        penaltyBps: Number(chain.vaultPenaltyBps.lookup(key)),
+        status: vaultState === "WITHDRAWN" || vaultState === "PENALTY_EXECUTED" ? "WITHDRAWN" : "ACTIVE",
+        vaultState,
+        createdAt: privateVault?.createdAt ?? 0,
+        releaseHash
+      });
+    }
+  } catch (err: any) {
+    if (err?.message?.includes("expected UnsignedInteger") || err?.message?.includes("CompactError")) {
+      throw new Error(
+        `Contract ${contractAddress.slice(0, 12)}… uses an incompatible legacy (Wave 1) schema. Please deploy a new Wave 2 contract on #/deploy.`
+      );
+    }
+    throw err;
   }
 
   return {
