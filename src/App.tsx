@@ -165,7 +165,7 @@ export default function App() {
           </main>
 
           <footer className="footer">
-            <span>VEIL VAULT · WAVE 1</span>
+            <span>VEIL VAULT · WAVE 2</span>
             <span>
               <i className="online-dot" />{" "}
               {wallet.isConnected

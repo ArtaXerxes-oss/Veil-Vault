@@ -221,7 +221,7 @@ export function DeployPage({
           onChange={(e) => setTreasuryHex(e.target.value.trim())}
           disabled={disabled}
         />
-        <small className="field-help">64 hex characters. Default is a random local treasury key for Wave 1.</small>
+        <small className="field-help">64 hex characters. Default is a generated 32-byte treasury key for Wave 2 protocol accounting.</small>
         <button
           className="primary-button"
           style={{ marginTop: 12 }}

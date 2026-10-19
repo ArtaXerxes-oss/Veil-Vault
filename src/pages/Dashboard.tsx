@@ -19,7 +19,7 @@ export function Dashboard({ vaults, now, onOpen, treasury }: DashboardProps) {
     <>
       <section className="page-intro dashboard-intro">
         <div>
-          <p className="section-kicker">PRIVATE VAULTS</p>
+          <p className="section-kicker">PRIVATE VAULTS · WAVE 2</p>
           <h1>Value, on your terms.</h1>
           <p className="intro-copy">Lock an asset until your conditions are satisfied. The contract handles the rules; your balance stays private.</p>
         </div>
@@ -49,14 +49,23 @@ export function Dashboard({ vaults, now, onOpen, treasury }: DashboardProps) {
       <section className="how-it-works">
         <div><p className="section-kicker">HOW IT WORKS</p><h2>Private by design.</h2></div>
         <div className="steps">
-          <div className="step"><span>01</span><h3>Create</h3><p>Choose the asset, amount, and unlock condition.</p></div>
-          <div className="step"><span>02</span><h3>Lock</h3><p>Your vault stays protected until its conditions are met.</p></div>
+          <div className="step"><span>01</span><h3>Create</h3><p>Choose token denomination, amount, unlock condition, and optional secret.</p></div>
+          <div className="step"><span>02</span><h3>Lock</h3><p>Your vault stays protected in ZK commitments until its conditions are met.</p></div>
           <div className="step"><span>03</span><h3>Withdraw</h3><p>Exit at unlock, or early under the penalty policy.</p></div>
         </div>
       </section>
+
       <section className="treasury-strip">
-        <div><p className="section-kicker">TREASURY</p><h2>Protocol accounting</h2><p>Early-exit penalties settle here. No governance or staking is part of Wave 1.</p></div>
-        <div className="treasury-balance"><span>COLLECTED PENALTIES</span><strong>{formatUnits(treasury.balance)} <small>units</small></strong><em>{treasury.address}</em></div>
+        <div>
+          <p className="section-kicker">TREASURY</p>
+          <h2>Protocol accounting</h2>
+          <p>Early-exit penalties settle here. Wave 2 live accounting with full commitment-hardened privacy.</p>
+        </div>
+        <div className="treasury-balance">
+          <span>COLLECTED PENALTIES</span>
+          <strong>{formatUnits(treasury.balance)} <small>units</small></strong>
+          <em>{treasury.address}</em>
+        </div>
       </section>
     </>
   );

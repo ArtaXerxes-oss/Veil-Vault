@@ -60,7 +60,7 @@ The address is bound automatically on startup (saved localStorage wins, then env
 
 The app keeps two deliberately separate layers:
 
-- **`src/lib/contract.ts`** — an executable reference model of the Wave 1 authority (validation, lock modes, penalty, treasury accounting, private-state tracking). Used by the test suite only.
+- **`src/lib/contract.ts`** — an executable reference model of the Wave 2 authority (validation, lock modes, penalty, encrypted unlock secrets, extended lifecycle, treasury accounting, private-state tracking). Used by the test suite only.
 - **`contracts/time-locked-vault/time_locked_vault.compact`** — the actual Compact contract: state declaration, circuits, and queries. The frontend never replaces contract enforcement with a UI-only timer.
 
 The live integration path is:
@@ -200,7 +200,7 @@ src/pages/                           Landing, Dashboard, CreateVault, VaultDetai
 src/components/                      WalletButton, CreateVaultForm, TransactionStatus, VaultCard, VaultStatus
 src/lib/                             useVaultApp, vaultContract (live), midnight (providers), contract (model), validation, format
 src/contexts/WalletContext.tsx       1AM/Lace session + provider wiring
-tests/                               Contract + validation Wave 1 tests
+tests/                               Contract + validation Wave 2 test suite (36 tests)
 docs/                                architecture.md, privacy-model.md, threat-model.md
 scripts/                             deploy.ts, setup.ts
 ```
@@ -284,25 +284,26 @@ Midnight's Compact separates **on-chain ledger** (public, indexer-readable) from
 | `treasuryBalance` | `Uint<128>` Cell | `+ disclose(penalty)` | Public — `getTreasuryBalance()` |
 | `ownerPublicKey` | `Bytes<32>` Cell | `disclose(deriveKey(ownerSecret))` in `constructor:68` | Public commitment, secret never leaves witness |
 | `vaultOwner` | `Map<Uint<64>, Bytes<32>>` | `disclose(callerPk)` per vault | Public — owner commitment derived from creator's secret |
-| `vaultAmount` | `Map<Uint<64>, Uint<128>>` | `disclose(amt)` where `amt == vaultAmountPrivate()` | Public in Wave 1 (Wave 2 moves to committed-only) |
 | `vaultUnlockTime` | `Map<Uint<64>, Uint<64>>` | `disclose(unlockTime)` | Public — unlock policy |
 | `vaultLockType` | `Map<Uint<64>, Uint<8>>` | `disclose(lockType)` (`0`=STRICT, `1`=PENALTY) | Public |
 | `vaultPenaltyBps` | `Map<Uint<64>, Uint<16>>` | `disclose(penaltyBps)` | Public |
-| `vaultState` | `Map<Uint<64>, VaultState>` | `LOCKED → WITHDRAWN / PENALTY_EXECUTED` | Public lifecycle — `getVaultState()` |
-| `vaultTermsCommitment` | `Map<Uint<64>, Bytes<32>>` | `disclose(persistentCommit([amt, unlockTime, lockType, penaltyBps], nonce))` | Public commitment, preimage private |
+| `vaultState` | `Map<Uint<64>, VaultState>` | Extended state transitions (`EMPTY → DEPOSITING → COMMITTED → LOCKED → READY → RELEASABLE → WITHDRAWN / PENALTY_EXECUTED`) | Public lifecycle — `getVaultState()` |
+| `vaultTermsCommitment` | `Map<Uint<64>, Bytes<32>>` | `disclose(persistentCommit([amt, unlockTime, lockType, penaltyBps], nonce))` | Public commitment; **amount is strictly hidden in ZK** |
+| `vaultReleaseHash` | `Map<Uint<64>, Bytes<32>>` | `disclose(getReleaseHash(releaseSecret))` | Public hash commitment for optional secret unlock |
 
 All reads go through `createPatchedPublicDataProvider → contractState → ContractState.deserialize → ledger()` — no private field is ever `lookup()`'d without `disclose()` gating.
 
-**Private witnesses (`witness` in `time_locked_vault.compact:36` + `contracts/time-locked-vault/witnesses.ts:4`) — stored only in `VeilVaultPrivateState` (browser `veil-vault-private-meta-v1:<address>`, never on-chain):**
+**Private witnesses (`witness` in `time_locked_vault.compact:38` + `contracts/time-locked-vault/witnesses.ts:4`) — stored only in `VeilVaultPrivateState` (browser `veil-vault-private-meta-v1:<address>`, never on-chain):**
 
 | Witness | `VeilVaultPrivateState` field | Used in | Role |
 |---|---|---|---|
-| `ownerSecret(): Bytes<32>` | `secretKey` | `constructor`, `createVault`, `withdraw`, `withdrawWithPenalty` | Private key → `deriveKey(sk)=persistentHash([pad("veil:vault:key"), sk]):47` → `ownerPublicKey`; `assert(deriveKey(ownerSecret)==vaultOwner.lookup)` proves ownership without revealing `sk` |
-| `vaultAmountPrivate(): Uint<128>` | `amount` | `createVault` | Asserts `amt == amount:105` then committed + disclosed; binds private intent to public `vaultAmount` |
-| `vaultNonce(): Bytes<32>` | `nonce` | `createVault`, `withdraw`, `withdrawWithPenalty` | Random 32B for `persistentCommit<Vector<4,Bytes<32>>>([amt, unlockTime, lockType, penaltyBps], nonce):108` → `vaultTermsCommitment`; recomputed on withdraw to prove terms unchanged |
-| `vaultPenalty(): Uint<128>` | `penalty` | `withdrawWithPenalty` | `assert(penalty*10000==amount*penaltyBps)` (early) or `==0` (unlocked):210 → `treasuryBalance += disclose(penalty):215` |
-| `currentTime(): Uint<64>` | `currentTime` | `createVault`, `withdraw`, `withdrawWithPenalty` | `assert(unlockTime > currentTime())` on create, `assert(currentTime() >= unlockTime)` on withdraw |
-| `ownerProof(): Bytes<32>` | `ownerProof` (reserved) | declared `witness ownerProof(): Bytes<32>:38` | Reserved for future N-of-M / delegated proof (not consumed in Wave 1 circuits) |
+| `ownerSecret(): Bytes<32>` | `secretKey` | `constructor`, `createVault`, `commitVault`, `withdraw`, `withdrawWithPenalty` | Private key → `deriveKey(sk)=persistentHash([pad("veil:vault:key"), sk])` → `ownerPublicKey`; `assert(deriveKey(ownerSecret)==vaultOwner.lookup)` proves ownership without revealing `sk` |
+| `vaultAmountPrivate(): Uint<128>` | `amount` | `createVault`, `withdraw`, `withdrawWithPenalty` | Vault balance; checked against `vaultTermsCommitment` without on-chain disclosure |
+| `vaultNonce(): Bytes<32>` | `nonce` | `createVault`, `withdraw`, `withdrawWithPenalty` | Random 32B for `persistentCommit<Vector<4,Bytes<32>>>([amt, unlockTime, lockType, penaltyBps], nonce)` → `vaultTermsCommitment`; recomputed on withdraw to prove terms unchanged |
+| `releaseSecret(): Bytes<32>` | `releaseSecret` | `createVault`, `withdraw`, `withdrawWithPenalty` | Private passphrase preimage; hashed via `getReleaseHash` and verified against `vaultReleaseHash` |
+| `vaultPenalty(): Uint<128>` | `penalty` | `withdrawWithPenalty` | `assert(penalty*10000==amount*penaltyBps)` (early) or `==0` (unlocked) → `treasuryBalance += disclose(penalty)` |
+| `currentTime(): Uint<64>` | `currentTime` | `createVault`, `markReleasable`, `withdraw`, `withdrawWithPenalty` | `assert(unlockTime > currentTime())` on create, `assert(currentTime() >= unlockTime)` on withdraw / releasable |
+| `ownerProof(): Bytes<32>` | `ownerProof` (reserved) | declared `witness ownerProof(): Bytes<32>` | Reserved for future N-of-M / delegated proof in Wave 3 multi-party circuits |
 
 **How the proof ties them:**
 
@@ -381,18 +382,28 @@ See `docs/architecture.md`, `docs/privacy-model.md`, and `docs/threat-model.md` 
 - [x] **UX for pending/unconfirmed intents** — **COMPLETE**: Interactive 4-phase transaction progress tracker (`proving` → `balancing` → `submitting` → `confirming`) with real-time feedback and state sync so users never double-submit.
 - [x] **Lifecycle extension** — **COMPLETE**: Richer Compact state machine (`EMPTY → DEPOSITING → COMMITTED → LOCKED → READY → RELEASABLE → WITHDRAWN | PENALTY_EXECUTED`) with dedicated `commitVault` and `markReleasable` circuits.
 
-### Wave 3 — escrow, inheritance custody, audit
+### Wave 3 — Escrow, Multi-Sig Custody & Mainnet Deployment (Upcoming)
 
-- **Group escrow** — the time-lock vault becomes multi-party escrow: N-of-M approvers with per-party
-  commitments, deadline-arbitrated release, and dispute refunds, all enforced in Compact circuits, not
-  by the app.
-- **Multi-signature time-lock custody** — multiple keyholders required to remove/revoke funds, combined
-  with beneficiary recipient revocation for inheritance-style vaults.
-- **Testing discipline** — contract-level testkit-js suites for every circuit (happy path, boundary
-  timestamps, penalty math, failed assertions, replay/nonce reuse) executed against preview before any
-  patch ships, plus property tests for lifecycle invariants.
-- **Audit & mainnet** — formal review of the Compact contracts and witness handling, then the audited
-  contract deployed to mainnet.
+With the 5 core Wave 2 capabilities shipped (commitment hardening, encrypted unlock secrets, tDUST denominations, lifecycle extensions, and pending intent UX), Wave 3 transforms VEIL Vault from single-user time-locks into an institutional-grade, multi-party custody and escrow protocol:
+
+#### 1. N-of-M Multi-Party Group Escrow (`EscrowVault.compact`)
+- **ZK Multi-Party Arbitrated Release**: Vaults supporting $K$-of-$N$ threshold authorizations (buyers, sellers, arbiters, or executors) to approve fund releases or mutual cancellations.
+- **Commitment-Hiding Approvals**: Approver identities and approval states remain strictly confidential via private witness proofs (`approverSecret` and nullifier checks) rather than revealing participant pubkeys on-chain.
+- **Arbitration & Dispute Refund Circuits**: Built-in fallback deadline conditions where funds automatically revert to the depositor if approvals stall or disputes trigger arbiter intervention.
+
+#### 2. Multi-Signature Time-Lock Custody & Inheritance Vaults
+- **Threshold Keyholder Custody**: Large treasury reserves require threshold $M$-of-$N$ key signatures to initiate or authorize early emergency penalty withdrawals.
+- **Beneficiary Designation with Time-Lock Cascades**: Inheritance vaults where a primary owner holds execution rights during their lifetime, with secondary beneficiary keys activating only after an inactivity heartbeat period (dead-man switch) expires.
+- **Revocable Delegated Withdrawals**: Zero-knowledge delegation tickets enabling trusted executors to withdraw on behalf of beneficiaries without learning the underlying vault amount.
+
+#### 3. Formal Testing Discipline & Invariant Verification
+- **Full `testkit-js` Circuit Matrix**: Comprehensive contract-level tests for every Compact circuit, verifying boundary timestamps, penalty arithmetic precision, and zero-remainder splits.
+- **Replay & Nullifier Safety**: Property tests proving replay attacks and nonce reuse are mathematically impossible under the Compact ledger state model.
+- **Preview & Preprod Multi-Wallet Matrix**: Automated CI validation using multiple simultaneous 1AM and Lace test wallets on preprod and preview testnets.
+
+#### 4. Security Audit & Mainnet Readiness
+- **Compact & Witness Security Review**: External review of witness handling, private state isolation in `localStorage`, and key derivation domain separation (`"veil:vault:key"`).
+- **Midnight Mainnet Deployment**: Deployment of audited circuits to Midnight mainnet with production explorer indexing and public verification records.
 
 ---
 
