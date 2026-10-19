@@ -4,6 +4,8 @@
 
 **VEIL Vault** is a private, time-locked asset vault for the [Midnight](https://midnight.network) blockchain. It connects a real Midnight wallet (1AM/Lace), deploys and initializes a real **Compact** contract, creates private vaults via a real `createVault` circuit call, and supports withdrawals on schedule or early exits with a penalty.
 
+This project was developed as a fresh build in this repository for the Midnight Buildathon. The app, Compact contract, wallet integration, and product flow were authored for this submission and are not presented as a fork, copy, or inherited codebase from a prior product.
+
 > **Buildathon submission:** repo + `docs/slide-deck.md` + video `https://youtu.be/dyCqXgBnkgE` via AKINDO. License Apache-2.0 (`LICENSE`). Add `midnightntwrk` topic in GitHub About — see `docs/GITHUB-SETUP.md`. Judge init path: `docs/DEPLOY-CHECKLIST.md`. Known privacy scope: `docs/privacy-limitation.md`.
 
 The frontend talks directly to the live chain — no simulation. Balances and ownership live in Compact **private state**; commitments, vault counters, treasury, and lifecycle status are readable from the Midnight indexer.
@@ -411,7 +413,7 @@ With the 5 core Wave 2 capabilities shipped (commitment hardening, encrypted unl
 
 - **Create Midnight App** — project scaffolding and deployment conventions used for app setup and local build flow ([Midnight docs](https://docs.midnight.network/develop/tutorial/building))
 - **Midnight** — network and ZK primitives used by the app, including wallet flow and Compact runtime behavior ([midnight.network](https://midnight.network))
-- **Escrow / state-machine patterns** — general lifecycle patterns for lock-and-release flows (`EMPTY → LOCKED → READY → WITHDRAWN → PENALTY_EXECUTED`), implemented in a project-specific design rather than copied from a prior product
+- **Escrow / state-machine patterns** — general lifecycle patterns for lock-and-release flows (`EMPTY → LOCKED → READY → WITHDRAWN → PENALTY_EXECUTED`) used as architecture inspiration; the final implementation, contract logic, and product flow were designed specifically for this project and implemented in this repository
 - **Wallet + Compact tooling** — wallet SDK, compact compiler `0.31.1`, ledger-v8 `8.1.2`, and related runtime dependencies used to compile and interact with the contract
 
 ---
