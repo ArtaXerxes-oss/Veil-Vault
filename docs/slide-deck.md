@@ -1,4 +1,4 @@
-# VEIL Vault — Buildathon Slide Deck (Wave 2)
+# VEIL Vault — Buildathon Slide Deck
 
 Pitch: https://gamma.app/docs/VEIL-Vault-ypg0jo0ifligaen
 Submit via AKINDO with repo + video: `https://youtu.be/dyCqXgBnkgE`
@@ -22,7 +22,7 @@ Source: `contracts/time-locked-vault/time_locked_vault.compact` (8 circuits). Co
 
 ## 5. Privacy model
 Ledger (`disclose`) vs witnesses (never on-chain). See `README.md` Privacy table + `docs/privacy-model.md`.
-Known Wave 1 limitation: `vaultAmount` is `disclose(amt)` (`time_locked_vault.compact:120`). Wave 2 moves to commitment-only. Terms integrity via `persistentCommit([amt, unlockTime, lockType, penaltyBps], nonce)`.
+Known privacy limitation: `vaultAmount` is `disclose(amt)` (`time_locked_vault.compact:120`) in the open-ledger projection, while the contract uses commitment-based integrity checks for locked terms. Terms integrity via `persistentCommit([amt, unlockTime, lockType, penaltyBps], nonce)`.
 
 ## 6. Engineering proof
 `compact compile` exits 0, 8 circuits, 16 keys + 16 zkir. `npm run typecheck`, `npm test`, `npm run build` green. Tests: TS model (`tests/time-locked-vault/contract.test.ts`), multi-user ownership tests, validation, simulation (`tests/time-locked-vault/simulation.test.ts`), artifacts (`tests/time-locked-vault/contract-artifacts.test.ts`).

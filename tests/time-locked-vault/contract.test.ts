@@ -23,7 +23,7 @@ function rejects(fn: () => void, code: string) {
   assert.throws(fn, (error: any) => error.code === code);
 }
 
-describe("Wave 1 time-locked vault contract", () => {
+describe("time-locked vault contract", () => {
   it("initializes once and rejects re-initialization", () => {
     const instance = new TimeLockedVaultContract();
     instance.initialize("treasury-1");

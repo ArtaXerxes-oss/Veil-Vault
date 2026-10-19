@@ -2,9 +2,9 @@
 
 [![CI](https://github.com/ArtaXerxes-oss/Veil-Vault/actions/workflows/ci.yml/badge.svg)](https://github.com/ArtaXerxes-oss/Veil-Vault/actions/workflows/ci.yml)
 
-**VEIL Vault** is a private, time-locked asset vault for the [Midnight](https://midnight.network) blockchain. It is Wave 2 of a fintech product loop: connect a real Midnight wallet (1AM/Lace), deploy and initialize a real **Compact** contract, create private vaults via a real `createVault` circuit call, and withdraw on time or exit early with a penalty.
+**VEIL Vault** is a private, time-locked asset vault for the [Midnight](https://midnight.network) blockchain. It connects a real Midnight wallet (1AM/Lace), deploys and initializes a real **Compact** contract, creates private vaults via a real `createVault` circuit call, and supports withdrawals on schedule or early exits with a penalty.
 
-> **Wave 2 submission:** repo + `docs/slide-deck.md` + video `https://youtu.be/dyCqXgBnkgE` via AKINDO. License Apache-2.0 (`LICENSE`). Add `midnightntwrk` topic in GitHub About — see `docs/GITHUB-SETUP.md`. Judge init path: `docs/DEPLOY-CHECKLIST.md`. Known privacy scope: `docs/privacy-limitation.md`.
+> **Buildathon submission:** repo + `docs/slide-deck.md` + video `https://youtu.be/dyCqXgBnkgE` via AKINDO. License Apache-2.0 (`LICENSE`). Add `midnightntwrk` topic in GitHub About — see `docs/GITHUB-SETUP.md`. Judge init path: `docs/DEPLOY-CHECKLIST.md`. Known privacy scope: `docs/privacy-limitation.md`.
 
 The frontend talks directly to the live chain — no simulation. Balances and ownership live in Compact **private state**; commitments, vault counters, treasury, and lifecycle status are readable from the Midnight indexer.
 
@@ -398,7 +398,7 @@ With the 5 core Wave 2 capabilities shipped (commitment hardening, encrypted unl
 
 #### 3. Formal Testing Discipline & Invariant Verification
 - **Full `testkit-js` Circuit Matrix**: Comprehensive contract-level tests for every Compact circuit, verifying boundary timestamps, penalty arithmetic precision, and zero-remainder splits.
-- **Replay & Nullifier Safety**: Property tests proving replay attacks and nonce reuse are mathematically impossible under the Compact ledger state model.
+- **Replay & Nullifier Safety**: Property tests proving replay attacks and nonce repetition are mathematically impossible under the Compact ledger state model.
 - **Preview & Preprod Multi-Wallet Matrix**: Automated CI validation using multiple simultaneous 1AM and Lace test wallets on preprod and preview testnets.
 
 #### 4. Security Audit & Mainnet Readiness

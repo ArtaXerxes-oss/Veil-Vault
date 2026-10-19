@@ -156,7 +156,7 @@ export async function listOnChainVaults(
   } catch (err: any) {
     if (err?.message?.includes("expected UnsignedInteger") || err?.message?.includes("CompactError")) {
       throw new Error(
-        `Contract ${contractAddress.slice(0, 12)}… uses an incompatible legacy (Wave 1) schema. Please deploy a new Wave 2 contract on #/deploy.`
+        `Contract ${contractAddress.slice(0, 12)}… uses an incompatible schema. Please deploy a fresh contract on #/deploy.`
       );
     }
     throw err;
@@ -200,7 +200,7 @@ export async function listOnChainVaults(
   } catch (err: any) {
     if (err?.message?.includes("expected UnsignedInteger") || err?.message?.includes("CompactError")) {
       throw new Error(
-        `Contract ${contractAddress.slice(0, 12)}… uses an incompatible legacy (Wave 1) schema. Please deploy a new Wave 2 contract on #/deploy.`
+        `Contract ${contractAddress.slice(0, 12)}… uses an incompatible schema. Please deploy a fresh contract on #/deploy.`
       );
     }
     throw err;
