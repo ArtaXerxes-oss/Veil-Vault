@@ -20,7 +20,13 @@ export const BLOCKFROST_PREPROD_INDEXER_WS_URI = "wss://midnight-preprod.blockfr
 export const BLOCKFROST_PREPROD_NODE_URI = "https://rpc.midnight-preprod.blockfrost.io";
 
 export function getBlockfrostProjectId(): string | undefined {
-  return (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_BLOCKFROST_PROJECT_ID;
+  const envKey = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_BLOCKFROST_PROJECT_ID;
+  if (envKey) return envKey;
+  try {
+    const local = localStorage.getItem("veil-vault-blockfrost-project-id");
+    if (local) return local;
+  } catch {}
+  return "nightpreprodLH9l0w8K4GBglmB9AM9sfi9YErGidU2p";
 }
 
 export function resolveIndexerUrls(config?: { indexerUri?: string; indexerWsUri?: string }): { queryUrl: string; wsUrl: string } {
@@ -34,28 +40,30 @@ export function resolveIndexerUrls(config?: { indexerUri?: string; indexerWsUri?
     };
   }
 
+  const projectId = getBlockfrostProjectId();
+  const suffix = projectId ? `?project_id=${projectId}` : "";
+
   // If wallet returned the decommissioned legacy preprod indexer, redirect to Blockfrost preprod
   if (config?.indexerUri?.includes("indexer.preprod.midnight.network")) {
-    const projectId = getBlockfrostProjectId();
-    if (!projectId) {
-      console.error(
-        "[VeilVault] Legacy indexer.preprod.midnight.network is decommissioned (HTTP 410). " +
-        "Set VITE_BLOCKFROST_PROJECT_ID in .env to use Blockfrost preprod, or set VITE_MIDNIGHT_INDEXER to a custom indexer URL."
-      );
-    }
-    const suffix = projectId ? `?project_id=${projectId}` : "";
-    console.warn(
-      "[VeilVault] Wallet returned decommissioned indexer.preprod.midnight.network. Redirecting to Blockfrost preprod."
-    );
     return {
       queryUrl: `${BLOCKFROST_PREPROD_INDEXER_URI}${suffix}`,
       wsUrl: `${BLOCKFROST_PREPROD_INDEXER_WS_URI}${suffix}`
     };
   }
 
+  // If using Blockfrost endpoint without query token attached, attach it
+  if (config?.indexerUri?.includes("blockfrost.io") && !config.indexerUri.includes("project_id=") && projectId) {
+    const separator = config.indexerUri.includes("?") ? "&" : "?";
+    const wsSeparator = config.indexerWsUri?.includes("?") ? "&" : "?";
+    return {
+      queryUrl: `${config.indexerUri}${separator}project_id=${projectId}`,
+      wsUrl: `${config.indexerWsUri ?? BLOCKFROST_PREPROD_INDEXER_WS_URI}${wsSeparator}project_id=${projectId}`
+    };
+  }
+
   return {
-    queryUrl: config?.indexerUri || BLOCKFROST_PREPROD_INDEXER_URI,
-    wsUrl: config?.indexerWsUri || BLOCKFROST_PREPROD_INDEXER_WS_URI
+    queryUrl: config?.indexerUri || (projectId ? `${BLOCKFROST_PREPROD_INDEXER_URI}${suffix}` : BLOCKFROST_PREPROD_INDEXER_URI),
+    wsUrl: config?.indexerWsUri || (projectId ? `${BLOCKFROST_PREPROD_INDEXER_WS_URI}${suffix}` : BLOCKFROST_PREPROD_INDEXER_WS_URI)
   };
 }
 
