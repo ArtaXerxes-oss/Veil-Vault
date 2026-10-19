@@ -15,6 +15,50 @@ export const DEFAULT_CONTRACT_ADDRESS: string =
   "ca572dfc83d9eef244fdecc3becb0cc03ed56f6590f28cceaabee5c9688ba3ed";
 export const TX_LOG_KEY = "veil-vault-tx-log-v1";
 
+export const BLOCKFROST_PREPROD_INDEXER_URI = "https://midnight-preprod.blockfrost.io/api/v0";
+export const BLOCKFROST_PREPROD_INDEXER_WS_URI = "wss://midnight-preprod.blockfrost.io/api/v0/ws";
+export const BLOCKFROST_PREPROD_NODE_URI = "https://rpc.midnight-preprod.blockfrost.io";
+
+export function getBlockfrostProjectId(): string | undefined {
+  return (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_BLOCKFROST_PROJECT_ID;
+}
+
+export function resolveIndexerUrls(config?: { indexerUri?: string; indexerWsUri?: string }): { queryUrl: string; wsUrl: string } {
+  const envQuery = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_MIDNIGHT_INDEXER;
+  const envWs = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_MIDNIGHT_INDEXER_WS;
+
+  if (envQuery) {
+    return {
+      queryUrl: envQuery,
+      wsUrl: envWs ?? envQuery.replace(/^http/, "ws")
+    };
+  }
+
+  // If wallet returned the decommissioned legacy preprod indexer, redirect to Blockfrost preprod
+  if (config?.indexerUri?.includes("indexer.preprod.midnight.network")) {
+    const projectId = getBlockfrostProjectId();
+    if (!projectId) {
+      console.error(
+        "[VeilVault] Legacy indexer.preprod.midnight.network is decommissioned (HTTP 410). " +
+        "Set VITE_BLOCKFROST_PROJECT_ID in .env to use Blockfrost preprod, or set VITE_MIDNIGHT_INDEXER to a custom indexer URL."
+      );
+    }
+    const suffix = projectId ? `?project_id=${projectId}` : "";
+    console.warn(
+      "[VeilVault] Wallet returned decommissioned indexer.preprod.midnight.network. Redirecting to Blockfrost preprod."
+    );
+    return {
+      queryUrl: `${BLOCKFROST_PREPROD_INDEXER_URI}${suffix}`,
+      wsUrl: `${BLOCKFROST_PREPROD_INDEXER_WS_URI}${suffix}`
+    };
+  }
+
+  return {
+    queryUrl: config?.indexerUri || BLOCKFROST_PREPROD_INDEXER_URI,
+    wsUrl: config?.indexerWsUri || BLOCKFROST_PREPROD_INDEXER_WS_URI
+  };
+}
+
 export type MidnightNetwork = "preview" | "preprod" | "mainnet" | "undeployed";
 
 export type DetectedWallet = {
@@ -168,11 +212,35 @@ export function createPatchedPublicDataProvider(queryUrl: string, subscriptionUr
   const base = indexerPublicDataProvider(queryUrl, subscriptionUrl);
 
   async function queryLatest(query: string, address: string) {
-    const res = await fetch(queryUrl, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query, variables: { address } })
-    });
+    let res: Response;
+    const headers: Record<string, string> = { "content-type": "application/json" };
+    // Inject Blockfrost project_id header when using Blockfrost endpoints
+    const projectId = getBlockfrostProjectId();
+    if (projectId && queryUrl.includes("blockfrost.io")) {
+      headers["project_id"] = projectId;
+    }
+    try {
+      res = await fetch(queryUrl, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ query, variables: { address } })
+      });
+    } catch (fetchErr: any) {
+      if (queryUrl.includes("indexer.preprod.midnight.network")) {
+        throw new Error(
+          "Midnight Preprod public indexer was decommissioned on 2026-10-09. " +
+          "Set VITE_BLOCKFROST_PROJECT_ID in .env to use Blockfrost preprod indexer."
+        );
+      }
+      throw new Error(`Failed to reach Midnight indexer (${queryUrl}): ${fetchErr?.message ?? fetchErr}`);
+    }
+
+    if (res.status === 410 || (queryUrl.includes("indexer.preprod.midnight.network") && !res.ok)) {
+      throw new Error(
+        "Midnight Preprod indexer was decommissioned on 2026-10-09. " +
+        "Set VITE_BLOCKFROST_PROJECT_ID in .env to use Blockfrost preprod indexer."
+      );
+    }
     if (!res.ok) throw new Error(`Indexer HTTP error: ${res.status}`);
     const payload = await res.json();
     if (payload.errors?.length) {
@@ -268,7 +336,8 @@ export async function createConnectedSession(api: any, zkBase: string = ZK_ASSET
     }
   } as MidnightProvider;
 
-  const publicDataProvider = createPatchedPublicDataProvider(config.indexerUri, config.indexerWsUri);
+  const { queryUrl, wsUrl } = resolveIndexerUrls(config);
+  const publicDataProvider = createPatchedPublicDataProvider(queryUrl, wsUrl);
 
   return {
     api,

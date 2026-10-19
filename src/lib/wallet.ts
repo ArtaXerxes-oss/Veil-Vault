@@ -77,11 +77,11 @@ export function detectWalletStandalone(): any | null {
   return w?.api ?? null;
 }
 
-// Network configuration (kept for legacy imports)
+// Network configuration (kept for legacy imports — now points to Blockfrost preprod)
 export const MIDNIGHT_PREPROD_CONFIG = {
   networkId: 'preprod',
-  indexerUri: 'https://indexer.preprod.midnight.network/api/v4/graphql',
-  indexerWsUri: 'wss://indexer.preprod.midnight.network/api/v4/graphql/ws',
-  nodeUri: 'https://rpc.preprod.midnight.network',
+  indexerUri: 'https://midnight-preprod.blockfrost.io/api/v0',
+  indexerWsUri: 'wss://midnight-preprod.blockfrost.io/api/v0/ws',
+  nodeUri: 'https://rpc.midnight-preprod.blockfrost.io',
   proverServerUri: 'http://127.0.0.1:6300',
 };
