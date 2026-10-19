@@ -22,7 +22,9 @@ export type ContractErrorCode =
   | "UNAUTHORIZED"
   | "ALREADY_WITHDRAWN"
   | "STILL_LOCKED"
-  | "INVALID_TERMS";
+  | "INVALID_TERMS"
+  | "INVALID_STATE"
+  | "INVALID_RELEASE_SECRET";
 
 export class ContractError extends Error {
   constructor(
@@ -34,7 +36,7 @@ export class ContractError extends Error {
   }
 }
 
-export type VaultState = "EMPTY" | "LOCKED" | "READY" | "WITHDRAWN" | "PENALTY_EXECUTED";
+export type VaultState = "EMPTY" | "DEPOSITING" | "COMMITTED" | "LOCKED" | "READY" | "RELEASABLE" | "WITHDRAWN" | "PENALTY_EXECUTED";
 
 export interface CreateVaultInput {
   owner: string;
@@ -45,6 +47,7 @@ export interface CreateVaultInput {
   lockType: LockType;
   penaltyBps: number;
   now?: number;
+  releaseSecret?: string;
 }
 
 export interface WithdrawResult {
@@ -58,6 +61,7 @@ interface PrivateVaultData {
   nonce: string;
   amount: bigint;
   termsCommitment: string;
+  releaseHash?: string;
 }
 
 export function deriveKey(secret: string): string {
@@ -80,6 +84,17 @@ function persistentCommit(value: string, nonce: string): string {
     hash = hash & hash;
   }
   return `commit-${Math.abs(hash).toString(16)}`;
+}
+
+export function getReleaseHash(secret: string): string {
+  let hash = 0;
+  const data = "release:" + secret;
+  for (let i = 0; i < data.length; i++) {
+    const char = data.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return `rhash-${Math.abs(hash).toString(16)}`;
 }
 
 export class TimeLockedVaultContract {
@@ -142,17 +157,22 @@ export class TimeLockedVaultContract {
       nonce
     );
 
+    // Compute release hash if a secret is provided
+    const releaseHash = input.releaseSecret ? getReleaseHash(input.releaseSecret) : undefined;
+
     const vault: Vault = {
       id,
       owner: input.owner,
       asset: input.asset.trim(),
       amount: input.amount,
+      dustAmount: input.amount,
       unlockTime: input.unlockTime,
       lockType: input.lockType,
       penaltyBps,
       status: "ACTIVE",
       vaultState,
-      createdAt: now
+      createdAt: now,
+      releaseHash
     };
 
     this.vaults.set(id, vault);
@@ -161,7 +181,8 @@ export class TimeLockedVaultContract {
     this.privateVaultData.set(id, {
       nonce,
       amount: input.amount,
-      termsCommitment: terms
+      termsCommitment: terms,
+      releaseHash
     });
 
     this.transactions.unshift({
@@ -175,7 +196,59 @@ export class TimeLockedVaultContract {
     return this.copyVault(vault);
   }
 
-  withdraw(vaultId: number, caller: string, callerProof: string, now = Date.now()): WithdrawResult {
+  commitVault(vaultId: number, callerProof: string): Vault {
+    this.requireInitialized();
+    const vault = this.vaults.get(vaultId);
+    if (!vault) {
+      throw new ContractError("VAULT_NOT_FOUND", "That vault does not exist.");
+    }
+    if (vault.vaultState !== "DEPOSITING") {
+      throw new ContractError("INVALID_STATE", "Vault must be in DEPOSITING state to commit.");
+    }
+    if (!this.verifyOwner(callerProof, vaultId)) {
+      throw new ContractError("UNAUTHORIZED", "Only the vault owner can commit.");
+    }
+
+    vault.vaultState = "COMMITTED";
+
+    this.transactions.unshift({
+      id: `commit-${vaultId}-${Date.now()}`,
+      kind: "COMMIT",
+      vaultId,
+      timestamp: Date.now(),
+      status: "CONFIRMED",
+      message: `Vault #${String(vaultId).padStart(3, "0")} committed.`
+    });
+    return this.copyVault(vault);
+  }
+
+  markReleasable(vaultId: number, now = Date.now()): Vault {
+    this.requireInitialized();
+    const vault = this.vaults.get(vaultId);
+    if (!vault) {
+      throw new ContractError("VAULT_NOT_FOUND", "That vault does not exist.");
+    }
+    if (vault.vaultState !== "LOCKED" && vault.vaultState !== "READY") {
+      throw new ContractError("INVALID_STATE", "Vault must be LOCKED or READY to mark releasable.");
+    }
+    if (now < vault.unlockTime) {
+      throw new ContractError("STILL_LOCKED", "Vault is still locked.");
+    }
+
+    vault.vaultState = "RELEASABLE";
+
+    this.transactions.unshift({
+      id: `release-${vaultId}-${now}`,
+      kind: "RELEASE",
+      vaultId,
+      timestamp: now,
+      status: "CONFIRMED",
+      message: `Vault #${String(vaultId).padStart(3, "0")} marked releasable.`
+    });
+    return this.copyVault(vault);
+  }
+
+  withdraw(vaultId: number, caller: string, callerProof: string, now = Date.now(), releaseSecret?: string): WithdrawResult {
     this.requireInitialized();
     const vault = this.vaults.get(vaultId);
     if (!vault) {
@@ -196,6 +269,16 @@ export class TimeLockedVaultContract {
     // Verify terms commitment matches
     if (!this.verifyTerms(vaultId)) {
       throw new ContractError("INVALID_TERMS", "Vault terms have been tampered with.");
+    }
+
+    // Verify release secret if one was set
+    if (vault.releaseHash) {
+      if (!releaseSecret) {
+        throw new ContractError("INVALID_RELEASE_SECRET", "Release secret is required for this vault.");
+      }
+      if (getReleaseHash(releaseSecret) !== vault.releaseHash) {
+        throw new ContractError("INVALID_RELEASE_SECRET", "Invalid release secret.");
+      }
     }
 
     const penalty = !isUnlocked && vault.lockType === "PENALTY"
@@ -233,7 +316,7 @@ export class TimeLockedVaultContract {
     };
   }
 
-  withdrawWithPenalty(vaultId: number, caller: string, callerProof: string, now = Date.now(), penaltyBps = 0): WithdrawResult {
+  withdrawWithPenalty(vaultId: number, caller: string, callerProof: string, now = Date.now(), penaltyBps = 0, releaseSecret?: string): WithdrawResult {
     this.requireInitialized();
     const vault = this.vaults.get(vaultId);
     if (!vault) {
@@ -252,6 +335,16 @@ export class TimeLockedVaultContract {
     // Verify terms commitment matches
     if (!this.verifyTerms(vaultId)) {
       throw new ContractError("INVALID_TERMS", "Vault terms have been tampered with.");
+    }
+
+    // Verify release secret if one was set
+    if (vault.releaseHash) {
+      if (!releaseSecret) {
+        throw new ContractError("INVALID_RELEASE_SECRET", "Release secret is required for this vault.");
+      }
+      if (getReleaseHash(releaseSecret) !== vault.releaseHash) {
+        throw new ContractError("INVALID_RELEASE_SECRET", "Invalid release secret.");
+      }
     }
 
     const isUnlocked = now >= vault.unlockTime;
@@ -308,13 +401,14 @@ export class TimeLockedVaultContract {
   }
 
   listPublicVaults(owner?: string): PublicVault[] {
-    return this.listVaults(owner).map(({ id, asset, unlockTime, lockType, status, vaultState }) => ({
+    return this.listVaults(owner).map(({ id, asset, unlockTime, lockType, status, vaultState, releaseHash }) => ({
       id,
       asset,
       unlockTime,
       lockType,
       status,
-      vaultState
+      vaultState,
+      releaseHash
     }));
   }
 
@@ -345,6 +439,7 @@ export class TimeLockedVaultContract {
         ...vault,
         vaultState: vault.vaultState,
         amount: vault.amount.toString(),
+        dustAmount: vault.dustAmount?.toString(),
         penaltyPaid: vault.penaltyPaid?.toString(),
         ownerPayout: vault.ownerPayout?.toString()
       })),
@@ -372,6 +467,7 @@ export class TimeLockedVaultContract {
           ...vault,
           vaultState: (vault.vaultState as VaultState) || "LOCKED",
           amount: BigInt(vault.amount),
+          dustAmount: vault.dustAmount ? BigInt(vault.dustAmount) : undefined,
           penaltyPaid: vault.penaltyPaid === undefined ? undefined : BigInt(vault.penaltyPaid),
           ownerPayout: vault.ownerPayout === undefined ? undefined : BigInt(vault.ownerPayout)
         }

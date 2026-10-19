@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { WalletButton } from "./components/WalletButton";
-import { TransactionStatus } from "./components/TransactionStatus";
+import { TransactionStatus, PendingIntentBanner } from "./components/TransactionStatus";
 import { useWallet } from "./contexts/WalletContext";
 import { useVaultApp } from "./lib/useVaultApp";
 import { loadTxLog } from "./lib/midnight";
@@ -116,10 +116,8 @@ export default function App() {
               </section>
             )}
 
-            {app.statusMessage && (
-              <section className="connect-banner">
-                <div><strong>Transaction in progress</strong><p>{app.statusMessage}</p></div>
-              </section>
+            {(app.statusMessage || app.txPhase) && (
+              <PendingIntentBanner phase={app.txPhase} message={app.statusMessage} />
             )}
 
             <TransactionStatus notice={app.notice} onDismiss={app.dismissNotice} />

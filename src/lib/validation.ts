@@ -8,6 +8,7 @@ export interface CreateFormValues {
   unlockTime: string;
   lockType: LockType;
   penaltyPercent: string;
+  releaseSecret?: string;
 }
 
 export function validateCreateForm(values: CreateFormValues, now = Date.now()): string[] {

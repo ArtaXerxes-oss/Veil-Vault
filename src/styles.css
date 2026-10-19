@@ -2102,3 +2102,111 @@ input::placeholder {
     display: none;
   }
 }
+
+/* ─── Wave 2 Pending Intent UX ──────────────────────────────────── */
+.pending-intent-banner {
+  background: linear-gradient(135deg, rgba(13, 148, 136, 0.08), rgba(20, 184, 166, 0.03));
+  border: 1px solid var(--teal-ring, rgba(20, 184, 166, 0.3));
+  border-radius: var(--radius-md, 8px);
+  padding: 18px 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+}
+
+.pending-intent-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.pending-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(20, 184, 166, 0.25);
+  border-top-color: var(--teal, #0d9488);
+  border-radius: 50%;
+  animation: pending-spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pending-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.pending-intent-header strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--foreground, #0f172a);
+}
+
+.pending-intent-header p {
+  font-size: 13px;
+  color: var(--muted, #64748b);
+  margin: 2px 0 0;
+}
+
+.tx-phase-track {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.tx-phase-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  font-size: 12px;
+  color: var(--muted, #64748b);
+  transition: all 0.2s ease;
+}
+
+.tx-phase-pill.active {
+  background: #fff;
+  border-color: var(--teal, #0d9488);
+  color: var(--teal, #0d9488);
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(13, 148, 136, 0.15);
+}
+
+.tx-phase-pill.done {
+  background: rgba(13, 148, 136, 0.1);
+  border-color: rgba(13, 148, 136, 0.25);
+  color: var(--teal, #0d9488);
+}
+
+.pill-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  background: rgba(0, 0, 0, 0.08);
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.tx-phase-pill.active .pill-dot {
+  background: var(--teal, #0d9488);
+  color: #fff;
+}
+
+.tx-phase-pill.done .pill-dot {
+  background: var(--teal, #0d9488);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .tx-phase-track {
+    grid-template-columns: 1fr 1fr;
+  }
+}

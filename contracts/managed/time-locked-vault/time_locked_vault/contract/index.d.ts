@@ -6,6 +6,7 @@ export type Witnesses<PS> = {
   vaultNonce(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, Uint8Array];
   vaultPenalty(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, bigint];
   currentTime(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, bigint];
+  releaseSecret(context: __compactRuntime.WitnessContext<Ledger, PS>): [PS, Uint8Array];
 }
 
 export type ImpureCircuits<PS> = {
@@ -13,18 +14,21 @@ export type ImpureCircuits<PS> = {
              treasuryAddr_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   createVault(context: __compactRuntime.CircuitContext<PS>,
               vaultId_0: bigint,
-              amount_0: bigint,
               unlockTime_0: bigint,
               lockType_0: bigint,
               penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+  commitVault(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+  markReleasable(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   withdraw(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   withdrawWithPenalty(context: __compactRuntime.CircuitContext<PS>,
                       vaultId_0: bigint,
-                      penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, bigint>;
+                      penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   getVaultState(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, number>;
   isVaultInitialized(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, boolean>;
   getTreasury(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, Uint8Array>;
   getTreasuryBalance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, bigint>;
+  getVaultReleaseHash(context: __compactRuntime.CircuitContext<PS>,
+                      vaultId_0: bigint): __compactRuntime.CircuitResults<PS, Uint8Array>;
 }
 
 export type ProvableCircuits<PS> = {
@@ -32,18 +36,21 @@ export type ProvableCircuits<PS> = {
              treasuryAddr_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   createVault(context: __compactRuntime.CircuitContext<PS>,
               vaultId_0: bigint,
-              amount_0: bigint,
               unlockTime_0: bigint,
               lockType_0: bigint,
               penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+  commitVault(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+  markReleasable(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   withdraw(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   withdrawWithPenalty(context: __compactRuntime.CircuitContext<PS>,
                       vaultId_0: bigint,
-                      penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, bigint>;
+                      penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   getVaultState(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, number>;
   isVaultInitialized(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, boolean>;
   getTreasury(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, Uint8Array>;
   getTreasuryBalance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, bigint>;
+  getVaultReleaseHash(context: __compactRuntime.CircuitContext<PS>,
+                      vaultId_0: bigint): __compactRuntime.CircuitResults<PS, Uint8Array>;
 }
 
 export type PureCircuits = {
@@ -54,18 +61,21 @@ export type Circuits<PS> = {
              treasuryAddr_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   createVault(context: __compactRuntime.CircuitContext<PS>,
               vaultId_0: bigint,
-              amount_0: bigint,
               unlockTime_0: bigint,
               lockType_0: bigint,
               penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+  commitVault(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
+  markReleasable(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   withdraw(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   withdrawWithPenalty(context: __compactRuntime.CircuitContext<PS>,
                       vaultId_0: bigint,
-                      penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, bigint>;
+                      penaltyBps_0: bigint): __compactRuntime.CircuitResults<PS, []>;
   getVaultState(context: __compactRuntime.CircuitContext<PS>, vaultId_0: bigint): __compactRuntime.CircuitResults<PS, number>;
   isVaultInitialized(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, boolean>;
   getTreasury(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, Uint8Array>;
   getTreasuryBalance(context: __compactRuntime.CircuitContext<PS>): __compactRuntime.CircuitResults<PS, bigint>;
+  getVaultReleaseHash(context: __compactRuntime.CircuitContext<PS>,
+                      vaultId_0: bigint): __compactRuntime.CircuitResults<PS, Uint8Array>;
 }
 
 export type Ledger = {
@@ -80,13 +90,6 @@ export type Ledger = {
     member(key_0: bigint): boolean;
     lookup(key_0: bigint): Uint8Array;
     [Symbol.iterator](): Iterator<[bigint, Uint8Array]>
-  };
-  vaultAmount: {
-    isEmpty(): boolean;
-    size(): bigint;
-    member(key_0: bigint): boolean;
-    lookup(key_0: bigint): bigint;
-    [Symbol.iterator](): Iterator<[bigint, bigint]>
   };
   vaultUnlockTime: {
     isEmpty(): boolean;
@@ -117,6 +120,13 @@ export type Ledger = {
     [Symbol.iterator](): Iterator<[bigint, number]>
   };
   vaultTermsCommitment: {
+    isEmpty(): boolean;
+    size(): bigint;
+    member(key_0: bigint): boolean;
+    lookup(key_0: bigint): Uint8Array;
+    [Symbol.iterator](): Iterator<[bigint, Uint8Array]>
+  };
+  vaultReleaseHash: {
     isEmpty(): boolean;
     size(): bigint;
     member(key_0: bigint): boolean;

@@ -9,6 +9,7 @@ interface CreateVaultFormProps {
     unlockTime: number;
     lockType: LockType;
     penaltyBps: number;
+    releaseSecret?: string;
   }) => Promise<{ id: number } | null>;
   onCreated: (id: number) => void;
   busy?: boolean;
@@ -18,12 +19,13 @@ interface CreateVaultFormProps {
 }
 
 const initialForm: CreateFormValues = {
-  asset: "NIGHT",
+  asset: "tDUST",
   amount: "",
   unlockDate: "",
   unlockTime: "",
   lockType: "STRICT",
-  penaltyPercent: "5"
+  penaltyPercent: "5",
+  releaseSecret: ""
 };
 
 export function CreateVaultForm({ onCreate, onCreated, busy = false, ready = true, hint, buttonLabel }: CreateVaultFormProps) {
@@ -54,7 +56,8 @@ export function CreateVaultForm({ onCreate, onCreated, busy = false, ready = tru
         amount: BigInt(form.amount),
         unlockTime: new Date(`${form.unlockDate}T${form.unlockTime}`).getTime(),
         lockType: form.lockType,
-        penaltyBps: form.lockType === "PENALTY" ? percentToBps(form.penaltyPercent) : 0
+        penaltyBps: form.lockType === "PENALTY" ? percentToBps(form.penaltyPercent) : 0,
+        releaseSecret: form.releaseSecret?.trim() || undefined
       });
       if (vault) onCreated(vault.id);
     } finally {
@@ -67,13 +70,14 @@ export function CreateVaultForm({ onCreate, onCreated, busy = false, ready = tru
   return (
     <form className="vault-form" onSubmit={(e) => void submit(e)}>
       <div className="form-section">
-        <label className="field-label" htmlFor="asset">Asset label</label>
+        <label className="field-label" htmlFor="asset">Token denomination</label>
         <select id="asset" value={form.asset} onChange={(event) => update("asset", event.target.value)} disabled={disabled}>
-          <option value="NIGHT">NIGHT</option>
           <option value="tDUST">tDUST</option>
+          <option value="DUST">DUST</option>
+          <option value="NIGHT">NIGHT</option>
           <option value="CUSTOM">CUSTOM</option>
         </select>
-        <small className="field-help">Label only — Wave 1 locks an amount commitment on-chain via Compact witnesses.</small>
+        <small className="field-help">Select the token denomination for your vault deposit.</small>
       </div>
 
       <div className="form-section">
@@ -87,7 +91,7 @@ export function CreateVaultForm({ onCreate, onCreated, busy = false, ready = tru
             disabled={disabled}
             onChange={(event) => update("amount", event.target.value.replace(/[^\d]/g, ""))}
           />
-          <span>units</span>
+          <span>{form.asset === "tDUST" || form.asset === "DUST" ? form.asset : "units"}</span>
         </div>
       </div>
 
@@ -152,6 +156,22 @@ export function CreateVaultForm({ onCreate, onCreated, busy = false, ready = tru
           />
           <span>%</span>
         </div>
+      </div>
+
+      <div className="form-section">
+        <label className="field-label" htmlFor="release-secret">Release secret <small>(optional)</small></label>
+        <input
+          id="release-secret"
+          type="password"
+          placeholder="Optional passphrase for secret-based unlock"
+          value={form.releaseSecret}
+          disabled={disabled}
+          onChange={(event) => update("releaseSecret", event.target.value)}
+          autoComplete="off"
+        />
+        <small className="field-help">
+          If set, withdrawal requires both time unlock <em>and</em> this secret. The hash is stored on-chain; the secret never leaves your browser.
+        </small>
       </div>
 
       {errors.length > 0 && <div className="form-errors">{errors.map((error) => <div key={error}>! {error}</div>)}</div>}

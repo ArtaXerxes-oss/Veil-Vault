@@ -8,6 +8,7 @@ export type VeilVaultPrivateState = {
   nonce: Uint8Array;
   penalty: bigint;
   currentTime: bigint;
+  releaseSecret: Uint8Array;
 };
 
 export const witnesses = {
@@ -29,5 +30,9 @@ export const witnesses = {
 
   currentTime(context: WitnessContext<Ledger, VeilVaultPrivateState>): [VeilVaultPrivateState, bigint] {
     return [context.privateState, context.privateState.currentTime];
+  },
+
+  releaseSecret(context: WitnessContext<Ledger, VeilVaultPrivateState>): [VeilVaultPrivateState, Uint8Array] {
+    return [context.privateState, context.privateState.releaseSecret];
   }
 };

@@ -1,5 +1,5 @@
 // =============================================================================
-// VeilCommerce — Midnight Wallet Hook (Legacy Shim)
+// VeilVault — Midnight Wallet Hook (Legacy Shim)
 // -----------------------------------------------------------------------------
 // Upgraded to support BOTH 1AM (dust-free) and Lace (DApp Connector) wallets.
 // This file remains for backward compatibility — new code should import

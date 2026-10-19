@@ -1,13 +1,26 @@
-# Privacy limitation — Wave 2 disclosure
+# Privacy model — Wave 2 Commitment Scheme Hardening
 
-## Current (Wave 2 entry)
-`contracts/time-locked-vault/time_locked_vault.compact:120` does `disclose(amt)` into `vaultAmount`.
-Observer with indexer sees amount, unlock time, lock type, lifecycle. Owner secret + nonce stay in witnesses (`contracts/time-locked-vault/witnesses.ts:4`).
+## Hardened (Wave 2)
+The previous limitation (`disclose(amt)`) has been **hardened**:
+`contracts/time-locked-vault/time_locked_vault.compact` does **not** disclose `amt` to the public ledger.
+Instead, amount is private witness data verified exclusively through:
+`vaultTermsCommitment = persistentCommit([amt, unlockTime, lockType, penaltyBps], nonce)`
 
-This is intentional for Wave 2 judging so `withdraw` / `withdrawWithPenalty` can be verified against public `vaultAmount` without a separate reveal step.
+Observer with indexer sees:
+- `vaultOwner` (32B persistent hash commitment)
+- `vaultUnlockTime`
+- `vaultLockType`
+- `vaultPenaltyBps`
+- `vaultState`
+- `vaultTermsCommitment` (ZK commitment containing the amount)
+- `vaultReleaseHash` (hash of release secret, or zero-hash if none)
 
-## Wave 2 hardening (next)
-Move amount to commitment-only: keep `vaultTermsCommitment = persistentCommit([amt, unlockTime, lockType, penaltyBps], nonce)` as sole public value, remove `vaultAmount` disclose. Requires contract change + recompile + redeploy + new AKINDO version (later Wave, not this Wave 2 freeze).
+Amount is **strictly hidden** on-chain. Only the vault creator/owner with the private witness state (`secretKey`, `nonce`, `amount`) can recompute the commitment and satisfy the ZK circuits.
 
-## What is still private in Wave 2
-`secretKey`, `nonce` preimage, `ownerProof` material, browser-local pairing. `vaultOwner` is `persistentHash` commitment only.
+## What is private in Wave 2
+- `vaultAmount` (never disclosed on-chain; private witness)
+- `secretKey` (`ownerSecret` witness)
+- `nonce` preimage (private witness)
+- `releaseSecret` preimage (private witness)
+- `ownerProof` delegation material
+- Browser-local pairing in encrypted localStorage

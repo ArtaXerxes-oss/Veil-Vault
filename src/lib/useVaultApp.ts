@@ -15,12 +15,21 @@ import {
   listOnChainVaults,
   withdrawOnChain
 } from "./vaultContract";
-import type { LockType, Vault } from "../types";
+import type { LockType, TxPhase, Vault } from "../types";
 
 export interface AppNotice {
   tone: "success" | "error" | "info";
   title: string;
   body: string;
+}
+
+function parseTxPhase(message: string): TxPhase {
+  const lower = message.toLowerCase();
+  if (lower.includes("proving")) return "proving";
+  if (lower.includes("balanc")) return "balancing";
+  if (lower.includes("submitting")) return "submitting";
+  if (lower.includes("confirming") || lower.includes("waiting") || lower.includes("indexer")) return "confirming";
+  return "submitting";
 }
 
 export function useVaultApp() {
@@ -39,11 +48,24 @@ export function useVaultApp() {
   const [notice, setNotice] = useState<AppNotice | null>(null);
   const [busy, setBusy] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [txPhase, setTxPhase] = useState<TxPhase>(null);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
     const interval = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(interval);
+  }, []);
+
+  // Wrap onProgress to also update txPhase
+  const handleProgress = useCallback((message: string) => {
+    setStatusMessage(message);
+    setTxPhase(parseTxPhase(message));
+  }, []);
+
+  const resetTxState = useCallback(() => {
+    setBusy(false);
+    setStatusMessage(null);
+    setTxPhase(null);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -91,6 +113,7 @@ export function useVaultApp() {
       unlockTime: number;
       lockType: LockType;
       penaltyBps: number;
+      releaseSecret?: string;
     }) => {
       if (!session || !contractAddress) {
         setNotice({
@@ -101,9 +124,10 @@ export function useVaultApp() {
         return null;
       }
       setBusy(true);
-      setStatusMessage("Submitting createVault…");
+      setTxPhase("proving");
+      setStatusMessage("Proving createVault circuit…");
       try {
-        const result = await createVaultOnChain(session, contractAddress, input, setStatusMessage);
+        const result = await createVaultOnChain(session, contractAddress, input, handleProgress);
         setTransactions(
           appendTxLog({
             id: result.txId,
@@ -130,20 +154,20 @@ export function useVaultApp() {
         });
         return null;
       } finally {
-        setBusy(false);
-        setStatusMessage(null);
+        resetTxState();
       }
     },
-    [session, contractAddress, refresh]
+    [session, contractAddress, refresh, handleProgress, resetTxState]
   );
 
   const withdrawVault = useCallback(
     async (vaultId: number) => {
       if (!session || !contractAddress) return null;
       setBusy(true);
-      setStatusMessage("Submitting withdraw…");
+      setTxPhase("proving");
+      setStatusMessage("Proving withdraw circuit…");
       try {
-        const result = await withdrawOnChain(session, contractAddress, vaultId, "withdraw", setStatusMessage);
+        const result = await withdrawOnChain(session, contractAddress, vaultId, "withdraw", handleProgress);
         setTransactions(
           appendTxLog({
             id: result.txId,
@@ -170,20 +194,20 @@ export function useVaultApp() {
         });
         return null;
       } finally {
-        setBusy(false);
-        setStatusMessage(null);
+        resetTxState();
       }
     },
-    [session, contractAddress, refresh]
+    [session, contractAddress, refresh, handleProgress, resetTxState]
   );
 
   const withdrawWithPenalty = useCallback(
     async (vaultId: number) => {
       if (!session || !contractAddress) return null;
       setBusy(true);
-      setStatusMessage("Submitting early withdrawal…");
+      setTxPhase("proving");
+      setStatusMessage("Proving early withdrawal circuit…");
       try {
-        const result = await withdrawOnChain(session, contractAddress, vaultId, "penalty", setStatusMessage);
+        const result = await withdrawOnChain(session, contractAddress, vaultId, "penalty", handleProgress);
         setTransactions(
           appendTxLog({
             id: result.txId,
@@ -210,11 +234,10 @@ export function useVaultApp() {
         });
         return null;
       } finally {
-        setBusy(false);
-        setStatusMessage(null);
+        resetTxState();
       }
     },
-    [session, contractAddress, refresh]
+    [session, contractAddress, refresh, handleProgress, resetTxState]
   );
 
   return {
@@ -225,6 +248,7 @@ export function useVaultApp() {
     notice,
     busy,
     statusMessage,
+    txPhase,
     contractAddress,
     initialized,
     isConnected,
@@ -240,8 +264,9 @@ export function useVaultApp() {
     initialize: async (treasuryHex: string) => {
       if (!session || !contractAddress) throw new Error("Connect wallet and bind a contract first.");
       setBusy(true);
+      setTxPhase("proving");
       try {
-        const txId = await initializeVaultContract(session, contractAddress, treasuryHex, setStatusMessage);
+        const txId = await initializeVaultContract(session, contractAddress, treasuryHex, handleProgress);
         setTransactions(
           appendTxLog({
             id: txId,
@@ -255,8 +280,7 @@ export function useVaultApp() {
         await refresh();
         return txId;
       } finally {
-        setBusy(false);
-        setStatusMessage(null);
+        resetTxState();
       }
     }
   };

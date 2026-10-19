@@ -24,10 +24,14 @@ import {
 } from "./midnight";
 import type { LockType, Vault, VaultState } from "../types";
 
+// Must match the Compact enum order: EMPTY(0), DEPOSITING(1), COMMITTED(2), LOCKED(3), READY(4), RELEASABLE(5), WITHDRAWN(6), PENALTY_EXECUTED(7)
 const VAULT_STATE_LABELS: VaultState[] = [
   "EMPTY",
+  "DEPOSITING",
+  "COMMITTED",
   "LOCKED",
   "READY",
+  "RELEASABLE",
   "WITHDRAWN",
   "PENALTY_EXECUTED"
 ];
@@ -43,6 +47,7 @@ export type VaultPrivateMeta = {
       nonceHex: string;
       asset: string;
       createdAt: number;
+      releaseSecretHex?: string;
     }
   >;
 };
@@ -61,7 +66,8 @@ export function emptyPrivateState(secretKey = randomBytes32()): VeilVaultPrivate
     ownerProof: new Uint8Array(32),
     nonce: new Uint8Array(32),
     penalty: 0n,
-    currentTime: BigInt(Date.now())
+    currentTime: BigInt(Date.now()),
+    releaseSecret: new Uint8Array(32)
   };
 }
 
@@ -158,17 +164,25 @@ export async function listOnChainVaults(
     const lockTypeNum = Number(chain.vaultLockType.lookup(key));
     const vaultState = mapVaultState(chain.vaultState.lookup(key));
     const privateVault = meta?.vaults[String(id)];
+    // Amount is private (commitment only) — read from local private meta, not from chain
+    const amount = privateVault ? BigInt(privateVault.amount) : 0n;
+    // Release hash from on-chain ledger
+    const releaseHash = chain.vaultReleaseHash?.member(key)
+      ? toHex(chain.vaultReleaseHash.lookup(key))
+      : undefined;
     vaults.push({
       id,
       owner: toHex(chain.vaultOwner.lookup(key)),
-      asset: privateVault?.asset ?? "NIGHT",
-      amount: chain.vaultAmount.lookup(key),
+      asset: privateVault?.asset ?? "tDUST",
+      amount,
+      dustAmount: amount,
       unlockTime: Number(chain.vaultUnlockTime.lookup(key)),
       lockType: lockTypeNum === 1 ? "PENALTY" : "STRICT",
       penaltyBps: Number(chain.vaultPenaltyBps.lookup(key)),
       status: vaultState === "WITHDRAWN" || vaultState === "PENALTY_EXECUTED" ? "WITHDRAWN" : "ACTIVE",
       vaultState,
-      createdAt: privateVault?.createdAt ?? 0
+      createdAt: privateVault?.createdAt ?? 0,
+      releaseHash
     });
   }
 
@@ -274,6 +288,7 @@ export async function createVaultOnChain(
     lockType: LockType;
     penaltyBps: number;
     asset: string;
+    releaseSecret?: string;
   },
   onProgress?: (message: string) => void
 ): Promise<{ vaultId: number; txId: string }> {
@@ -285,28 +300,36 @@ export async function createVaultOnChain(
   const lockType = input.lockType === "PENALTY" ? 1n : 0n;
   const penaltyBps = BigInt(input.lockType === "PENALTY" ? input.penaltyBps : 0);
 
+  // Convert release secret string to 32-byte hash input (or zero bytes if not provided)
+  const releaseSecretBytes = input.releaseSecret
+    ? new TextEncoder().encode(input.releaseSecret.padEnd(32, "\0")).slice(0, 32)
+    : new Uint8Array(32);
+
   await ensurePrivateState(session, contractAddress, {
     amount: input.amount,
     nonce,
     currentTime: BigInt(Date.now()),
-    penalty: 0n
+    penalty: 0n,
+    releaseSecret: releaseSecretBytes
   });
 
-  onProgress?.(`Creating vault #${vaultId}…`);
+  onProgress?.("Proving createVault circuit…");
   const compiledContract = getCompiledContract();
   const callTxData = await createUnprovenCallTx(session.providers as any, {
     compiledContract,
     contractAddress,
     circuitId: "createVault",
-    args: [BigInt(vaultId), input.amount, BigInt(input.unlockTime), lockType, penaltyBps],
+    args: [BigInt(vaultId), BigInt(input.unlockTime), lockType, penaltyBps],
     privateStateId: PRIVATE_STATE_ID
   } as any);
 
+  onProgress?.("Submitting createVault transaction…");
   const txId = await submitTxAsync(session.providers as any, {
     unprovenTx: callTxData.private.unprovenTx,
     circuitId: "createVault"
   });
 
+  onProgress?.("Confirming on-chain state…");
   await waitForStateAdvance(session.providers.publicDataProvider, async (provider) => {
     const state = await provider.queryContractState(contractAddress);
     if (!state?.data) return false;
@@ -321,7 +344,8 @@ export async function createVaultOnChain(
     amount: input.amount.toString(),
     nonceHex: toHex(nonce),
     asset: input.asset,
-    createdAt: Date.now()
+    createdAt: Date.now(),
+    releaseSecretHex: input.releaseSecret ? toHex(releaseSecretBytes) : undefined
   };
   savePrivateMeta(contractAddress, meta);
 
@@ -344,7 +368,8 @@ export async function withdrawOnChain(
   const chain = await readLedger(session, contractAddress);
   if (!chain) throw new Error("Could not read contract state.");
 
-  const amount = chain.vaultAmount.lookup(BigInt(vaultId));
+  // Amount is private — read from local meta, not from chain
+  const amount = BigInt(vaultMeta.amount);
   const unlockTime = Number(chain.vaultUnlockTime.lookup(BigInt(vaultId)));
   const penaltyBps = Number(chain.vaultPenaltyBps.lookup(BigInt(vaultId)));
   const now = Date.now();
@@ -353,17 +378,23 @@ export async function withdrawOnChain(
       ? (amount * BigInt(penaltyBps)) / 10000n
       : 0n;
 
+  // Restore release secret from meta
+  const releaseSecretBytes = vaultMeta.releaseSecretHex
+    ? hexToBytes32(vaultMeta.releaseSecretHex.padEnd(64, "0"))
+    : new Uint8Array(32);
+
   await ensurePrivateState(session, contractAddress, {
     amount,
     nonce: hexToBytes32(vaultMeta.nonceHex),
     currentTime: BigInt(now),
-    penalty
+    penalty,
+    releaseSecret: releaseSecretBytes
   });
 
   const circuitId = mode === "penalty" ? "withdrawWithPenalty" : "withdraw";
   const args = mode === "penalty" ? [BigInt(vaultId), BigInt(penaltyBps)] : [BigInt(vaultId)];
 
-  onProgress?.(`Submitting ${circuitId}…`);
+  onProgress?.(`Proving ${circuitId} circuit…`);
   const compiledContract = getCompiledContract();
   const beforeState = chain.vaultState.lookup(BigInt(vaultId));
 
@@ -375,11 +406,13 @@ export async function withdrawOnChain(
     privateStateId: PRIVATE_STATE_ID
   } as any);
 
+  onProgress?.(`Submitting ${circuitId} transaction…`);
   const txId = await submitTxAsync(session.providers as any, {
     unprovenTx: callTxData.private.unprovenTx,
     circuitId
   });
 
+  onProgress?.("Confirming on-chain state…");
   await waitForStateAdvance(session.providers.publicDataProvider, async (provider) => {
     const state = await provider.queryContractState(contractAddress);
     if (!state?.data) return false;

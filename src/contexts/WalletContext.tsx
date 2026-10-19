@@ -1,5 +1,5 @@
 // =============================================================================
-// VeilCommerce — Wallet Context (1AM + Lace) — Reference Accurate
+// VeilVault — Wallet Context (1AM + Lace) — Reference Accurate
 // -----------------------------------------------------------------------------
 // Strictly follows reference implementations from the 11 repos:
 //  - Midnight-Skills templates/locker-dapp/lib/midnight.ts (canonical session)
@@ -165,19 +165,19 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      console.log(`[VeilCommerce] Connecting to ${wallet.name} (${wallet.type}) on ${network}...`);
+      console.log(`[VeilVault] Connecting to ${wallet.name} (${wallet.type}) on ${network}...`);
       let api: any;
       // DApp Connector API: connect(networkId) — dmarket/kredz style
       // 1AM supports string, Lace supports string, legacy may support {networkId}
       try {
         api = await wallet.api.connect(network);
-        console.log('[VeilCommerce] connect(string) succeeded');
+        console.log('[VeilVault] connect(string) succeeded');
       } catch (e: any) {
-        console.warn('[VeilCommerce] connect(string) failed, trying object form:', e?.message);
+        console.warn('[VeilVault] connect(string) failed, trying object form:', e?.message);
         // Fallback to object form (legacy wallet-sdk) like old useMidnightWallet did: connect({networkId})
         if (String(e?.message ?? '').toLowerCase().includes('network') || String(e).includes('networkId')) {
           api = await (wallet.api as any).connect({ networkId: network });
-          console.log('[VeilCommerce] connect({networkId}) succeeded');
+          console.log('[VeilVault] connect({networkId}) succeeded');
         } else {
           throw e;
         }
@@ -185,13 +185,13 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
       // Some wallets return void/undefined but expose ConnectedAPI on same object
       if (!api || typeof api.getConfiguration !== 'function') {
-        console.warn('[VeilCommerce] connect returned no API, using InitialAPI as fallback');
+        console.warn('[VeilVault] connect returned no API, using InitialAPI as fallback');
         api = wallet.api;
         // Try enable() as fallback (ZK-Judge style: enable() vs connect())
         if (typeof (wallet.api as any).enable === 'function' && typeof api.getConfiguration !== 'function') {
           try {
             api = await (wallet.api as any).enable();
-            console.log('[VeilCommerce] enable() succeeded');
+            console.log('[VeilVault] enable() succeeded');
           } catch {}
         }
       }
@@ -204,7 +204,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       try {
         if (typeof api.getConnectionStatus === 'function') {
           const status = await api.getConnectionStatus();
-          console.log('[VeilCommerce] connectionStatus:', status);
+          console.log('[VeilVault] connectionStatus:', status);
         }
       } catch {}
 
@@ -222,7 +222,7 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
       setWalletName(wallet.name);
       setSelectedWallet(wallet);
       setError(null);
-      console.log('[VeilCommerce] Connected:', wallet.name, addr, sess.config.networkId);
+      console.log('[VeilVault] Connected:', wallet.name, addr, sess.config.networkId);
       return sess;
     } catch (err: any) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -246,22 +246,22 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
 
   const connect = useCallback(async (network = 'preprod') => {
     if (connectingRef.current) return;
-    console.log('[VeilCommerce] connect() triggered, network:', network);
+    console.log('[VeilVault] connect() triggered, network:', network);
     const wallets = listWallets();
     setDetectedWallets(wallets);
 
     // If wallets already detected, prefer 1AM -> Lace -> first
     if (wallets.length > 0) {
       const preferred = wallets.find((w) => w.type === '1am') ?? wallets.find((w) => w.type === 'lace') ?? wallets[0];
-      console.log('[VeilCommerce] auto-selecting wallet:', preferred.name);
+      console.log('[VeilVault] auto-selecting wallet:', preferred.name);
       return connectWallet(preferred, network);
     }
 
     // No wallets yet — wait for injection like kredz 5s polling (50*100ms)
-    console.log('[VeilCommerce] no wallets immediately, polling for injection...');
+    console.log('[VeilVault] no wallets immediately, polling for injection...');
     const polled = await waitForWallet(3000, 100);
     if (polled) {
-      console.log('[VeilCommerce] wallet appeared after polling:', polled.name);
+      console.log('[VeilVault] wallet appeared after polling:', polled.name);
       setDetectedWallets([polled]);
       setWalletStatus('detected');
       return connectWallet(polled, network);
@@ -270,12 +270,12 @@ export function WalletProvider({ children }: { children: React.ReactNode }) {
     const msg = 'No Midnight wallet found. Please install 1AM or Lace extension, make sure it is enabled and unlocked, then refresh.';
     setError(msg);
     setWalletStatus('not-found');
-    console.error('[VeilCommerce] ' + msg);
+    console.error('[VeilVault] ' + msg);
     throw new Error(msg);
   }, [connectWallet]);
 
   const disconnect = useCallback(() => {
-    console.log('[VeilCommerce] disconnecting');
+    console.log('[VeilVault] disconnecting');
     try {
       // Best-effort disconnect — not all wallets expose disconnect
       (session?.api as any)?.disconnect?.()?.catch(() => {});

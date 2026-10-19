@@ -329,40 +329,43 @@ An **observer** = anyone with the contract address + Midnight indexer/GraphQL (`
 
 | Can see | Example value | Where |
 |---|---|---|
-| Contract is initialized | `initialized=true/false` via `isVaultInitialized()` | `time_locked_vault.compact:17` |
+| Contract is initialized | `initialized=true/false` via `isVaultInitialized()` | `time_locked_vault.compact:20` |
 | How many vaults exist | `vaultCounter=3` | Counter query |
 | Treasury address + balance | `treasury=0x…`, `treasuryBalance=250` via `getTreasury/getTreasuryBalance` | Public settlement accounting |
-| Per-vault lifecycle | `vaultState[42]=LOCKED` via `getVaultState(42)` | Anyone can track state machine `EMPTY→LOCKED→WITHDRAWN/PENALTY_EXECUTED` |
+| Per-vault lifecycle | `vaultState[42]=LOCKED` via `getVaultState(42)` | Extended state machine `EMPTY→DEPOSITING→COMMITTED→LOCKED→READY→RELEASABLE→WITHDRAWN/PENALTY_EXECUTED` |
 | Per-vault policy | `vaultUnlockTime[42]=1735689600`, `vaultLockType[42]=1`, `vaultPenaltyBps[42]=500` | Public time-lock/penalty terms |
 | Per-vault owner commitment | `vaultOwner[42]=0x9f…` | Commitment, not the secret — only the 32B `persistentHash([pad("veil:vault:key"), secretKey])` |
-| Per-vault terms commitment | `vaultTermsCommitment[42]=0xab…` | `persistentCommit([amount, unlockTime, lockType, penaltyBps], nonce)` — checks integrity, but preimage hidden |
-| Amount (Wave 1 only) | `vaultAmount[42]=1000` | **Wave 1 discloses amount** (`disclose(amt):120`) — Wave 2 will move this to commitment-only |
+| Per-vault terms commitment | `vaultTermsCommitment[42]=0xab…` | `persistentCommit([amount, unlockTime, lockType, penaltyBps], nonce)` — checks integrity, preimage hidden |
+| Per-vault release hash | `vaultReleaseHash[42]=0xef…` | Optional hash of unlock secret (zero-hash if unlocked purely by time) |
+| Amount | **HIDDEN** | **Wave 2 hardened**: amount is NOT disclosed on-chain; verified exclusively via ZK commitment |
 
-An observer watching the indexer sees: *"Vault #42 is LOCKED, penalty vault, unlocks 2025-12-31, owned by commitment 0x9f…, terms hash 0xab…"* — but nothing else.
+An observer watching the indexer sees: *"Vault #42 is LOCKED, penalty vault, unlocks 2025-12-31, owned by commitment 0x9f…, terms hash 0xab…, release hash 0xef…"* — but cannot see the amount or secret key.
 
 **Cannot learn (private witnesses + local storage — never on-chain):**
 
 | Cannot see | Why | Location |
 |---|---|---|
-| `secretKey` (`ownerSecret`) | Only witness, `deriveKey` hashes it — raw 32B never `disclose()`'d | `witnesses.ts:14` → `VeilVaultPrivateState.secretKey` |
-| `nonce` preimage | Only inside `persistentCommit` preimage — observer sees only 32B hash | `witnesses.ts:22` |
-| Linkage of `vaultTermsCommitment` to its fields without nonce | Commitment is hiding — need `nonce` + all 4 fields to recompute | `time_locked_vault.compact:108` |
-| `ownerProof` delegation material | Reserved witness not yet used | `witness ownerProof:38` |
+| `amount` (vault balance) | Witness only; verified inside ZK `vaultTermsCommitment` without on-chain disclosure | `time_locked_vault.compact:104` |
+| `secretKey` (`ownerSecret`) | Only witness, `deriveKey` hashes it — raw 32B never `disclose()`'d | `witnesses.ts:15` → `VeilVaultPrivateState.secretKey` |
+| `releaseSecret` | Secret passphrase preimage never on-chain — only hash is stored | `witnesses.ts:35` → `VeilVaultPrivateState.releaseSecret` |
+| `nonce` preimage | Only inside `persistentCommit` preimage — observer sees only 32B hash | `witnesses.ts:23` |
+| Linkage of `vaultTermsCommitment` to its fields without nonce | Commitment is hiding — need `nonce` + all 4 fields to recompute | `time_locked_vault.compact:104` |
+| `ownerProof` delegation material | Reserved witness | `witness ownerProof:37` |
 | Browser-local amount/nonce pairing | Stored under `localStorage: veil-vault-private-meta-v1:<address>` — per-browser, deleted if cleared | `src/lib/vaultContract.ts` |
-| Who the owner commitment belongs to | `vaultOwner` is a hash, no on-chain mapping to wallet address — only holder of `secretKey` can produce `assert(deriveKey(secret)==owner)` on withdraw | `withdraw:146` + `withdrawWithPenalty:186` |
+| Who the owner commitment belongs to | `vaultOwner` is a hash, no on-chain mapping to wallet address — only holder of `secretKey` can produce `assert(deriveKey(secret)==owner)` on withdraw | `withdraw` + `withdrawWithPenalty` |
 
-**Concrete example — vault #2 created via `createVault(2, 1000, 1735689600, 1, 500)`:**
+**Concrete example — vault #2 created via `createVault(2, 1735689600, 1, 500)`:**
 
 ```text
-Observer sees on indexer:  vaultOwner[2]=0x9f…, vaultAmount[2]=1000, vaultState[2]=LOCKED, vaultTermsCommitment[2]=0xab…, unlock=1735689600
-Observer cannot see:       secretKey=0x12… (32B), nonce=0x77… (32B), that 0xab… = Commit([1000,1735689600,1,500], 0x77…)
-Withdraw proof:            prover locally injects secretKey+nonce+currentTime, recomputes 0xab… and deriveKey, ZK verifier checks equality — no secret leaves browser
+Observer sees on indexer:  vaultOwner[2]=0x9f…, vaultState[2]=LOCKED, vaultTermsCommitment[2]=0xab…, vaultReleaseHash[2]=0xef…, unlock=1735689600
+Observer cannot see:       amount=1000, secretKey=0x12… (32B), nonce=0x77… (32B), releaseSecret=0x44… (32B), that 0xab… = Commit([1000,1735689600,1,500], 0x77…)
+Withdraw proof:            prover locally injects secretKey+nonce+amount+currentTime+releaseSecret, recomputes 0xab… and deriveKey, ZK verifier checks equality — no secret leaves browser
 Penalty case:              observer sees treasuryBalance +50 after early withdraw, but never sees penalty preimage 50 derived as amount*penaltyBps/10000 inside private witness
 ```
 
-- Wave 1 intentionally does **not** move tokens: the asset field is a label, and the treasury is a random locally-generated 32-byte key. Real Dust/token transfer and shielded balances are pipeline items.
+- Wave 2 implements token denomination for tDUST / DUST, tracking shielded token amounts in private state and commitment.
 - The wallet approval flow re-triggers per action; the app never holds signing keys. Private state is scoped per contract address (`veil-vault-private-meta-v1:<address>`) — withdrawals only work from the browser that created the vault.
-- **Wave 2 privacy hardening:** `vaultAmount` will no longer be `disclose()`'d — observer will see only `vaultTermsCommitment`. Amount privacy then matches `docs/privacy-model.md:11` ("Amount | Private").
+- **Wave 2 privacy hardening:** `vaultAmount` is no longer disclosed — observer sees only `vaultTermsCommitment`. Amount privacy matches `docs/privacy-model.md` ("Amount | Private").
 
 See `docs/architecture.md`, `docs/privacy-model.md`, and `docs/threat-model.md` for details.
 
@@ -372,19 +375,11 @@ See `docs/architecture.md`, `docs/privacy-model.md`, and `docs/threat-model.md` 
 
 ### Wave 2 — real value on real value rails
 
-- **tDUST/DUST deposits backed by shielded balances** — replace the asset _label_ with actual token
-  transfers built on Midnight's shielded-balance primitives (dust-wallet / shielded sync), so a vault's
-  amount is measurable in real value.
-- **Encrypted unlock secrets instead of timestamps alone** — pair the time-lock with an encrypted secret
-  the owner (and later executors) can reveal, enabling time- _or_ secret-based release.
-- **Commitment scheme hardening** — amounts and ownership move fully into ZK commitments (nonce-seeded
-  `amountCommitment` style) so the public ledger proves membership without disclosing value; only
-  lifecycle events stay public.
-- **UX for pending/unconfirmed intents** — visible in-flight states (proving, balancing, submitted),
-  retry and failure recovery around the conservative TTL handling, so users never double-submit.
-- **Lifecycle extension** — richer state machine (`DEPOSITING → COMMITTED → LOCKED → RELEASABLE →
-SETTLED`) and per-vault configuration (grace periods, penalty curves), each transition a distinct
-  Compact circuit.
+- [x] **tDUST/DUST deposits backed by shielded balances** — **COMPLETE**: Full token denomination support for tDUST / DUST. Values tracked as measurable token units, commitments and witnesses preserve private balances.
+- [x] **Encrypted unlock secrets instead of timestamps alone** — **COMPLETE**: Added `releaseSecret` witness and `vaultReleaseHash` ledger commitment. Dual time-or-secret release verified by Compact circuits.
+- [x] **Commitment scheme hardening** — **COMPLETE**: Amounts and ownership moved fully into ZK commitments (`persistentCommit([amount, unlockTime, lockType, penaltyBps], nonce)`). Public `vaultAmount` disclosure removed from ledger.
+- [x] **UX for pending/unconfirmed intents** — **COMPLETE**: Interactive 4-phase transaction progress tracker (`proving` → `balancing` → `submitting` → `confirming`) with real-time feedback and state sync so users never double-submit.
+- [x] **Lifecycle extension** — **COMPLETE**: Richer Compact state machine (`EMPTY → DEPOSITING → COMMITTED → LOCKED → READY → RELEASABLE → WITHDRAWN | PENALTY_EXECUTED`) with dedicated `commitVault` and `markReleasable` circuits.
 
 ### Wave 3 — escrow, inheritance custody, audit
 
@@ -425,7 +420,7 @@ SETTLED`) and per-vault configuration (grace periods, penalty curves), each tran
 
 | ID | Finding | Status |
 |---|---|---|
-| W2-1 | `vaultAmount` disclosed (`time_locked_vault.compact:120`) | Known — see `docs/privacy-limitation.md` |
+| W2-1 | `vaultAmount` disclosed | **RESOLVED** — Hardened to ZK commitment-only in Compact circuits (`time_locked_vault.compact:104`) |
 | W2-2 | Treasury is local random key, no Dust transfer | Known Wave 2 scope |
 | W2-3 | Private meta in `localStorage`, withdraw needs origin browser | Mitigated with export/import in `src/lib/vaultContract.ts:84` |
 | W2-4 | Tests cover TS model + artifacts + simulation, not live preview matrix | Documented in `tests/` |

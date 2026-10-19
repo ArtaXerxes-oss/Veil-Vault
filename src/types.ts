@@ -1,14 +1,16 @@
 export type LockType = "STRICT" | "PENALTY";
-export type VaultState = "EMPTY" | "LOCKED" | "READY" | "WITHDRAWN" | "PENALTY_EXECUTED";
+export type VaultState = "EMPTY" | "DEPOSITING" | "COMMITTED" | "LOCKED" | "READY" | "RELEASABLE" | "WITHDRAWN" | "PENALTY_EXECUTED";
 export type VaultStatus = "ACTIVE" | "WITHDRAWN";
-export type TransactionKind = "CREATE" | "WITHDRAW" | "PENALTY_WITHDRAW";
-export type TransactionStatus = "CONFIRMED" | "FAILED";
+export type TransactionKind = "CREATE" | "WITHDRAW" | "PENALTY_WITHDRAW" | "COMMIT" | "RELEASE";
+export type TransactionStatus = "CONFIRMED" | "FAILED" | "PENDING" | "PROVING" | "BALANCING" | "SUBMITTING";
+export type TxPhase = "proving" | "balancing" | "submitting" | "confirming" | null;
 
 export interface Vault {
   id: number;
   owner: string;
   asset: string;
   amount: bigint;
+  dustAmount?: bigint;
   unlockTime: number;
   lockType: LockType;
   penaltyBps: number;
@@ -18,6 +20,7 @@ export interface Vault {
   withdrawnAt?: number;
   penaltyPaid?: bigint;
   ownerPayout?: bigint;
+  releaseHash?: string;
 }
 
 export interface PublicVault {
@@ -27,6 +30,7 @@ export interface PublicVault {
   lockType: LockType;
   status: VaultStatus;
   vaultState: VaultState;
+  releaseHash?: string;
 }
 
 export interface TransactionRecord {
@@ -40,8 +44,9 @@ export interface TransactionRecord {
   ownerPayout?: bigint;
 }
 
-export interface SerializedVault extends Omit<Vault, "amount" | "penaltyPaid" | "ownerPayout"> {
+export interface SerializedVault extends Omit<Vault, "amount" | "penaltyPaid" | "ownerPayout" | "dustAmount"> {
   amount: string;
+  dustAmount?: string;
   penaltyPaid?: string;
   ownerPayout?: string;
 }

@@ -35,13 +35,6 @@
           }
         },
         {
-          "name": "amount",
-          "type": {
-            "type-name": "Uint",
-            "maxval": 340282366920938463463374607431768211455
-          }
-        },
-        {
           "name": "unlockTime",
           "type": {
             "type-name": "Uint",
@@ -60,6 +53,44 @@
           "type": {
             "type-name": "Uint",
             "maxval": 65535
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
+      "name": "commitVault",
+      "pure": false,
+      "proof": true,
+      "arguments": [
+        {
+          "name": "vaultId",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Tuple",
+        "types": [
+        ]
+      }
+    },
+    {
+      "name": "markReleasable",
+      "pure": false,
+      "proof": true,
+      "arguments": [
+        {
+          "name": "vaultId",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
           }
         }
       ],
@@ -109,8 +140,9 @@
         }
       ],
       "result-type": {
-        "type-name": "Uint",
-        "maxval": 340282366920938463463374607431768211455
+        "type-name": "Tuple",
+        "types": [
+        ]
       }
     },
     {
@@ -131,8 +163,11 @@
         "name": "VaultState",
         "elements": [
           "EMPTY",
+          "DEPOSITING",
+          "COMMITTED",
           "LOCKED",
           "READY",
+          "RELEASABLE",
           "WITHDRAWN",
           "PENALTY_EXECUTED"
         ]
@@ -168,6 +203,24 @@
       "result-type": {
         "type-name": "Uint",
         "maxval": 340282366920938463463374607431768211455
+      }
+    },
+    {
+      "name": "getVaultReleaseHash",
+      "pure": false,
+      "proof": true,
+      "arguments": [
+        {
+          "name": "vaultId",
+          "type": {
+            "type-name": "Uint",
+            "maxval": 18446744073709551615
+          }
+        }
+      ],
+      "result-type": {
+        "type-name": "Bytes",
+        "length": 32
       }
     }
   ],
@@ -215,6 +268,15 @@
       "result type": {
         "type-name": "Uint",
         "maxval": 18446744073709551615
+      }
+    },
+    {
+      "name": "releaseSecret",
+      "arguments": [
+      ],
+      "result type": {
+        "type-name": "Bytes",
+        "length": 32
       }
     }
   ],
@@ -281,22 +343,8 @@
       }
     },
     {
-      "name": "vaultAmount",
-      "index": 6,
-      "exported": true,
-      "storage": "Map",
-      "key": {
-        "type-name": "Uint",
-        "maxval": 18446744073709551615
-      },
-      "value": {
-        "type-name": "Uint",
-        "maxval": 340282366920938463463374607431768211455
-      }
-    },
-    {
       "name": "vaultUnlockTime",
-      "index": 7,
+      "index": 6,
       "exported": true,
       "storage": "Map",
       "key": {
@@ -310,7 +358,7 @@
     },
     {
       "name": "vaultLockType",
-      "index": 8,
+      "index": 7,
       "exported": true,
       "storage": "Map",
       "key": {
@@ -324,7 +372,7 @@
     },
     {
       "name": "vaultPenaltyBps",
-      "index": 9,
+      "index": 8,
       "exported": true,
       "storage": "Map",
       "key": {
@@ -338,7 +386,7 @@
     },
     {
       "name": "vaultState",
-      "index": 10,
+      "index": 9,
       "exported": true,
       "storage": "Map",
       "key": {
@@ -350,8 +398,11 @@
         "name": "VaultState",
         "elements": [
           "EMPTY",
+          "DEPOSITING",
+          "COMMITTED",
           "LOCKED",
           "READY",
+          "RELEASABLE",
           "WITHDRAWN",
           "PENALTY_EXECUTED"
         ]
@@ -359,6 +410,20 @@
     },
     {
       "name": "vaultTermsCommitment",
+      "index": 10,
+      "exported": true,
+      "storage": "Map",
+      "key": {
+        "type-name": "Uint",
+        "maxval": 18446744073709551615
+      },
+      "value": {
+        "type-name": "Bytes",
+        "length": 32
+      }
+    },
+    {
+      "name": "vaultReleaseHash",
       "index": 11,
       "exported": true,
       "storage": "Map",
